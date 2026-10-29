@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.png -text
+vendor/purify.es.mjs -text
+vendor/purify.min.js -text
+vendor/DOMPurify-LICENSE -text
