@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>UIAssistant · Color workspace</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <symbol id="i-picker" viewBox="0 0 24 24">
+          <path d="m15 4 5 5M4 20l4-1L20 7a2.1 2.1 0 0 0-3-3L5 16l-1 4Zm7-10 3 3" />
+        </symbol>
+        <symbol id="i-gradient" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="16" rx="3" />
+          <path d="M7 5v14m5-14v14m5-14v14" />
+        </symbol>
+        <symbol id="i-page" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <path d="M3 9h18M9 9v12m-3-15h.01M9 6h.01" />
+        </symbol>
+        <symbol id="i-palette" viewBox="0 0 24 24">
+          <path
+            d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.5-3.3 1.5 1.5 0 0 1 1.1-2.5H18c3 0 3-3 3-4A9 9 0 0 0 12 3Z"
+          />
+          <path d="M7 10h.01M10 6h.01M15 7h.01M6 14h.01" />
+        </symbol>
+        <symbol id="i-history" viewBox="0 0 24 24">
+          <path d="M3 11a9 9 0 1 1 2.6 7.4M3 4v7h7m2-4v5l3 2" />
+        </symbol>
+        <symbol id="i-copy" viewBox="0 0 24 24">
+          <rect x="8" y="8" width="12" height="12" rx="2" />
+          <path d="M16 8V4H4v12h4" />
+        </symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <path
+            d="m10 3-.7 3-2 .9-2.7-.9-2 3.5L4.8 12l-.2 2.2-2 2.3 2 3.5 3-.9 2 .9.4 3h4l.7-3 2-.9 2.7.9 2-3.5-2.2-2.5.2-2.2 2-2.3-2-3.5-3 .9-2-.9L14 3Z"
+            transform="translate(0 -1) scale(1 .95)"
+          />
+          <circle cx="12" cy="11" r="3" />
+        </symbol>
+        <symbol id="i-expand" viewBox="0 0 24 24">
+          <path d="M14 3h7v7m0-7-9 9M10 3H3v18h18v-7" />
+        </symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5" /></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+        <symbol id="i-star" viewBox="0 0 24 24">
+          <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z" />
+        </symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24">
+          <path d="M20 7a9 9 0 1 0 1 8m-1-13v6h-6" />
+        </symbol>
+        <symbol id="i-download" viewBox="0 0 24 24">
+          <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" />
+        </symbol>
+        <symbol id="i-screen" viewBox="0 0 24 24">
+          <rect x="2" y="3" width="20" height="14" rx="2" />
+          <path d="M8 21h8m-4-4v4" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6" /></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24">
+          <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" />
+        </symbol>
+      </defs>
+    </svg>
+    <div class="app">
+      <aside class="sidebar">
+        <a class="brand" href="#picker" aria-label="UIAssistant home"
+          ><span class="brand-mark">u<span>i</span></span
+          ><span>UIAssistant<small>THE FRONTEND TOOLKIT</small></span></a
+        >
+        <div class="workspace-label" data-i18n="workspace">WORKSPACE</div>
+        <nav aria-label="Tools">
+          <button class="nav-item active" data-view="picker">
+            <svg><use href="#i-picker" /></svg><span data-i18n="picker">Color picker</span
+            ><kbd>01</kbd>
+          </button>
+          <button class="nav-item" data-view="gradients">
+            <svg><use href="#i-gradient" /></svg><span data-i18n="gradients">Gradients</span
+            ><kbd>02</kbd>
+          </button>
+          <button class="nav-item" data-view="analyzer">
+            <svg><use href="#i-page" /></svg><span data-i18n="analyzer">Page palette</span
+            ><kbd>03</kbd>
+          </button>
+          <button class="nav-item" data-view="palettes">
+            <svg><use href="#i-palette" /></svg><span data-i18n="palettes">Palette library</span
+            ><kbd>04</kbd>
+          </button>
+          <button class="nav-item" data-view="history">
+            <svg><use href="#i-history" /></svg><span data-i18n="history">Color history</span
+            ><kbd>05</kbd>
+          </button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="little-art"><span></span><span></span><span></span></div>
+          <p data-i18n="tagline">A little color.<br />A better workflow.</p>
+          <button class="quiet sidebar-settings" id="settings-btn">
+            <svg><use href="#i-settings" /></svg><span data-i18n="settings">Preferences</span>
+          </button>
+          <div class="version"><span class="dot"></span> LOCAL FIRST <span>v0.3</span></div>
+        </div>
+      </aside>
+      <div class="main-wrap">
+        <header>
+          <div>
+            <span class="eyebrow" data-i18n="colorTools">COLOR TOOLS</span>
+            <h1 id="view-title">Color picker<span class="title-dot">.</span></h1>
+          </div>
+          <div class="header-actions">
+            <button id="language-btn" class="quiet language" title="Change language">فا</button
+            ><button
+              class="icon-btn"
+              id="expand-btn"
+              data-title="openWorkspace"
+              aria-label="Open workspace"
+            >
+              <svg><use href="#i-expand" /></svg>
+            </button>
+          </div>
+        </header>
+        <main id="main">
+          <section class="view" id="view-picker">
+            <div class="section-intro">
+              <p data-i18n="pickerIntro">Find your next perfect color.</p>
+              <span class="pill"
+                ><span class="dot"></span><span data-i18n="ready">READY TO CREATE</span></span
+              >
+            </div>
+            <div class="pick-toolbar">
+              <button class="primary" id="pick-page">
+                <svg><use href="#i-picker" /></svg><span data-i18n="pickPage">Pick from page</span
+                ><kbd>Alt ⇧ C</kbd></button
+              ><button class="secondary" id="pick-screen">
+                <svg><use href="#i-screen" /></svg
+                ><span data-i18n="pickScreen">Screen</span></button
+              ><button
+                class="icon-btn bordered"
+                id="resample"
+                data-title="resample"
+                aria-label="Resample last location"
+              >
+                <svg><use href="#i-refresh" /></svg>
+              </button>
+            </div>
+            <div class="sampling-bar">
+              <label
+                ><span data-i18n="sample">Sample</span
+                ><select id="sample-size" aria-label="Sample size">
+                  <option value="1">1 × 1 px</option>
+                  <option value="3">3 × 3 px</option>
+                  <option value="5">5 × 5 px</option>
+                  <option value="11">11 × 11 px</option>
+                  <option value="25">25 × 25 px</option>
+                </select></label
+              ><select id="plane-mode" aria-label="Color picker component">
+                <option value="h">Hue · H</option>
+                <option value="s">Saturation · S</option>
+                <option value="v">Brightness · V</option>
+                <option value="r">Red · R</option>
+                <option value="g">Green · G</option>
+                <option value="b">Blue · B</option></select
+              ><button class="text-btn" id="pick-area" data-i18n="areaAverage">
+                Select area average
+              </button>
+            </div>
+            <div class="picker-grid">
+              <div class="spectrum-controls">
+                <div
+                  class="spectrum"
+                  id="spectrum"
+                  role="slider"
+                  tabindex="0"
+                  aria-label="Saturation and brightness"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="80"
+                >
+                  <canvas id="plane-canvas" width="128" height="128" hidden></canvas>
+                  <div class="spectrum-cursor" id="spectrum-cursor"></div>
+                </div>
+                <label class="range-label"
+                  ><span class="sr-only">Color component</span
+                  ><input
+                    type="range"
+                    id="hue"
+                    class="hue-range"
+                    min="0"
+                    max="360"
+                    step="0.1"
+                    value="247"
+                    aria-label="Hue" /></label
+                ><label class="range-label alpha-track"
+                  ><span class="sr-only">Opacity</span
+                  ><input
+                    type="range"
+                    id="alpha"
+                    min="0"
+                    max="100"
+                    value="100"
+                    aria-label="Opacity"
+                /></label>
+                <div class="spectrum-caption">
+                  <span data-i18n="spectrum">THE POSSIBILITIES ARE ENDLESS</span
+                  ><span id="alpha-caption">100%</span>
+                </div>
+              </div>
+              <div class="color-details">
+                <div class="color-preview checker">
+                  <div id="current-preview">
+                    <span>Aa</span><span id="preview-label">#6C5CE7</span>
+                  </div>
+                  <button
+                    class="favorite"
+                    id="favorite"
+                    data-title="savePalette"
+                    aria-label="Save to palette"
+                  >
+                    <svg><use href="#i-star" /></svg>
+                  </button>
+                </div>
+                <div class="hex-control">
+                  <label for="hex">HEX</label
+                  ><input
+                    id="hex"
+                    value="#6C5CE7"
+                    spellcheck="false"
+                    maxlength="80"
+                    aria-label="Color value"
+                  /><button class="icon-btn" id="copy-hex" aria-label="Copy hex">
+                    <svg><use href="#i-copy" /></svg>
+                  </button>
+                </div>
+                <div class="channels">
+                  <label>R<input id="r" type="number" min="0" max="255" /></label
+                  ><label>G<input id="g" type="number" min="0" max="255" /></label
+                  ><label>B<input id="b" type="number" min="0" max="255" /></label
+                  ><label>H<input id="h" type="number" min="0" max="360" /></label
+                  ><label>S<input id="s" type="number" min="0" max="100" /></label
+                  ><label>V<input id="v" type="number" min="0" max="100" /></label>
+                </div>
+                <div class="contrast-row">
+                  <span data-i18n="onWhite">On white</span><span id="contrast">4.86:1</span
+                  ><span id="contrast-badge" class="contrast-badge">AA</span>
+                </div>
+              </div>
+            </div>
+            <div class="format-bar">
+              <select id="copy-format" aria-label="Copy format">
+                <option value="hex">HEX</option>
+                <option value="hex8">HEX + Alpha</option>
+                <option value="hex-no-hash">HEX without #</option>
+                <option value="rgb">RGB</option>
+                <option value="rgba">RGBA</option>
+                <option value="hsl">HSL</option>
+                <option value="hsla">HSLA</option>
+                <option value="css">CSS variable</option></select
+              ><code id="formatted-color">#6C5CE7</code
+              ><button class="text-btn" id="copy-color">
+                <svg><use href="#i-copy" /></svg><span data-i18n="copy">Copy</span>
+              </button>
+            </div>
+            <div class="section-heading">
+              <h2 data-i18n="recent">Recently picked</h2>
+              <button class="text-btn small" data-go="history">
+                <span data-i18n="viewAll">View all</span><svg><use href="#i-arrow" /></svg>
+              </button>
+            </div>
+            <div id="recent-colors" class="recent-colors"></div>
+          </section>
+          <section class="view" id="view-gradients" hidden>
+            <div class="section-intro">
+              <p data-i18n="gradientIntro">A smooth transition from idea to CSS.</p>
+              <button class="text-btn" id="import-gradient" data-i18n="import">Import</button>
+            </div>
+            <div class="gradient-preview checker" id="gradient-preview">
+              <div id="gradient-paint"></div>
+              <span class="preview-badge">LIVE PREVIEW</span>
+            </div>
+            <div class="gradient-options">
+              <label
+                ><span data-i18n="type">Type</span
+                ><select id="gradient-type">
+                  <option value="linear">Linear</option>
+                  <option value="radial">Radial</option>
+                  <option value="conic">Conic</option>
+                </select></label
+              ><label
+                ><span data-i18n="angle">Angle</span
+                ><input id="gradient-angle" type="number" value="125" min="-360" max="360" /></label
+              ><label class="check-label"
+                ><input id="gradient-repeat" type="checkbox" /><span data-i18n="repeat"
+                  >Repeat</span
+                ></label
+              ><button class="text-btn" id="gradient-reverse" data-i18n="reverse">Reverse</button
+              ><button class="text-btn" id="gradient-adjust" data-i18n="adjust">Adjust</button>
+            </div>
+            <div class="section-heading">
+              <h2 data-i18n="colorStops">Color stops</h2>
+              <button class="text-btn small" id="add-stop">
+                <svg><use href="#i-plus" /></svg><span data-i18n="add">Add</span>
+              </button>
+            </div>
+            <div id="color-rail" class="stop-rail" aria-label="Color stop positions"></div>
+            <div id="gradient-stops" class="stop-list"></div>
+            <div class="section-heading">
+              <h2 data-i18n="opacityStops">Independent opacity stops</h2>
+              <button class="text-btn small" id="add-opacity">
+                <svg><use href="#i-plus" /></svg><span data-i18n="add">Add</span>
+              </button>
+            </div>
+            <div id="opacity-stops" class="stop-list"></div>
+            <div class="code-card">
+              <div class="code-header">
+                <span>CSS</span>
+                <div>
+                  <label
+                    ><input type="checkbox" id="gradient-compat" /><span data-i18n="prefixes"
+                      >Prefixes</span
+                    ></label
+                  ><label><input type="checkbox" id="gradient-scss" />SCSS</label
+                  ><select id="gradient-format" aria-label="Gradient color format">
+                    <option value="hex">HEX</option>
+                    <option value="rgb">RGB</option>
+                    <option value="hsl">HSL</option></select
+                  ><button class="text-btn" id="copy-gradient" data-i18n="copy">Copy</button>
+                </div>
+              </div>
+              <pre id="gradient-code"></pre>
+            </div>
+            <div class="export-row">
+              <button class="secondary small" id="save-gradient">
+                <svg><use href="#i-star" /></svg
+                ><span data-i18n="savePreset">Save preset</span></button
+              ><button class="quiet" id="export-svg">SVG</button
+              ><button class="quiet" id="export-png">PNG</button
+              ><label
+                >W<input
+                  id="preview-width"
+                  type="number"
+                  min="16"
+                  max="4096"
+                  value="800"
+                  aria-label="Export width" /></label
+              ><label
+                >H<input
+                  id="preview-height"
+                  type="number"
+                  min="16"
+                  max="4096"
+                  value="400"
+                  aria-label="Export height"
+              /></label>
+            </div>
+            <div class="section-heading"><h2 data-i18n="presets">Made for a head start</h2></div>
+            <div id="gradient-presets" class="preset-grid"></div>
+          </section>
+          <section class="view" id="view-analyzer" hidden>
+            <div class="section-intro">
+              <p data-i18n="analyzerIntro">The colors behind the interface.</p>
+            </div>
+            <div class="analyzer-hero">
+              <div class="analyzer-graphic">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <h2 data-i18n="discover">Discover a page's palette</h2>
+              <p data-i18n="discoverText">
+                Inspect text, backgrounds, borders and effects. Locate the elements that use each
+                color.
+              </p>
+              <button class="primary" id="analyze-page">
+                <svg><use href="#i-page" /></svg
+                ><span data-i18n="analyzePage">Analyze current page</span>
+              </button>
+            </div>
+            <div id="analysis-results" hidden>
+              <div class="analysis-meta">
+                <div>
+                  <strong id="analysis-title"></strong>
+                  <p id="analysis-summary"></p>
+                </div>
+                <button class="text-btn" id="save-analysis" data-i18n="savePalette">
+                  Save palette</button
+                ><button class="icon-btn" id="export-analysis" aria-label="Export page palette">
+                  <svg><use href="#i-download" /></svg>
+                </button>
+              </div>
+              <div class="filter-row">
+                <input
+                  type="search"
+                  id="analysis-search"
+                  data-placeholder="searchColors"
+                  placeholder="Search colors or properties…"
+                /><select id="analysis-sort" aria-label="Sort colors">
+                  <option value="count" data-i18n="frequency">Most used</option>
+                  <option value="hex" data-i18n="colorValue">Color value</option>
+                </select>
+              </div>
+              <div id="analysis-colors" class="analysis-colors"></div>
+              <p class="hint" data-i18n="locateHint">
+                Use the target button to reveal matching elements on the page.
+              </p>
+            </div>
+          </section>
+          <section class="view" id="view-palettes" hidden>
+            <div class="section-intro">
+              <p data-i18n="paletteIntro">Good colors deserve good company.</p>
+              <button class="text-btn" id="new-palette">
+                <svg><use href="#i-plus" /></svg><span data-i18n="newPalette">New palette</span>
+              </button>
+            </div>
+            <div class="filter-row">
+              <select id="palette-select" aria-label="Palette"></select
+              ><button class="secondary small" id="import-palette" data-i18n="import">Import</button
+              ><button class="icon-btn bordered" id="export-palette" aria-label="Export palette">
+                <svg><use href="#i-download" /></svg></button
+              ><button
+                class="icon-btn bordered"
+                id="delete-palette"
+                aria-label="Delete custom palette"
+              >
+                <svg><use href="#i-trash" /></svg>
+              </button>
+            </div>
+            <div class="palette-overview">
+              <h2 id="palette-name"></h2>
+              <span id="palette-count" class="muted"></span>
+            </div>
+            <div id="palette-colors" class="palette-grid"></div>
+            <p class="hint" data-i18n="paletteHint">
+              Click a swatch to edit and copy. Your custom palettes stay on this device.
+            </p>
+            <input type="file" id="palette-file" accept=".json,.gpl" hidden />
+          </section>
+          <section class="view" id="view-history" hidden>
+            <div class="section-intro">
+              <p data-i18n="historyIntro">Every color, a possibility worth keeping.</p>
+            </div>
+            <div class="filter-row">
+              <input
+                id="history-search"
+                type="search"
+                data-placeholder="searchHistory"
+                placeholder="Search your colors…"
+              /><button class="icon-btn bordered" id="export-history" aria-label="Export history">
+                <svg><use href="#i-download" /></svg></button
+              ><button class="text-btn danger" id="clear-history" data-i18n="clearHistory">
+                Clear history
+              </button>
+            </div>
+            <div id="history-list" class="history-list"></div>
+          </section>
+        </main>
+        <footer>
+          <span id="footer-status"
+            ><span class="dot"></span
+            ><span data-i18n="local">Made to stay on your device.</span></span
+          ><span class="footer-shortcut">Alt ⇧ U <span data-i18n="toOpen">to open</span></span>
+        </footer>
+      </div>
+    </div>
+    <dialog id="settings-dialog">
+      <div class="dialog-heading">
+        <h2 data-i18n="settings">Preferences</h2>
+        <button class="icon-btn dialog-close" aria-label="Close">
+          <svg><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <div class="setting-row">
+        <div>
+          <strong data-i18n="autoCopy">Auto-copy colors</strong>
+          <p data-i18n="autoCopyText">Every selected color is copied automatically.</p>
+        </div>
+        <input id="setting-autocopy" type="checkbox" role="switch" />
+      </div>
+      <div class="setting-row">
+        <div>
+          <strong data-i18n="outlines">Outline page elements</strong>
+          <p data-i18n="outlinesText">Show element boundaries while sampling.</p>
+        </div>
+        <input id="setting-outline" type="checkbox" role="switch" />
+      </div>
+      <div class="setting-row">
+        <div>
+          <strong data-i18n="singleClick">One-click eyedropper</strong>
+          <p data-i18n="singleClickText">
+            The toolbar icon starts sampling. Reopen the workspace from the result notification.
+          </p>
+        </div>
+        <input id="setting-singleclick" type="checkbox" role="switch" />
+      </div>
+      <div class="setting-row">
+        <strong data-i18n="language">Language</strong
+        ><select id="setting-language">
+          <option value="en">English</option>
+          <option value="fa">فارسی</option>
+        </select>
+      </div>
+      <div class="shortcut-help">
+        <strong data-i18n="shortcuts">Keyboard shortcuts</strong>
+        <p>Alt + Shift + C <span data-i18n="pickPage">Pick from page</span></p>
+        <p>Alt + Shift + R <span data-i18n="resample">Resample last location</span></p>
+        <p data-i18n="samplingHelp">
+          While picking: arrows to move, Shift for 10 px, Enter to pick, +/- for sample size, Space
+          to refresh, Esc to cancel. Drag to average an area.
+        </p>
+        <p class="hint" data-i18n="shortcutSettings">
+          Change browser shortcuts at chrome://extensions/shortcuts (or
+          edge://extensions/shortcuts).
+        </p>
+      </div>
+      <p class="privacy-note" data-i18n="privacy">
+        No accounts, analytics or remote services. Page access is granted only when you use a tool.
+        Browser pages and restricted stores cannot be inspected.
+      </p>
+    </dialog>
+    <dialog id="import-dialog">
+      <div class="dialog-heading">
+        <h2 data-i18n="importGradient">Import a gradient</h2>
+        <button class="icon-btn dialog-close" aria-label="Close">
+          <svg><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <label class="block-label" data-i18n="pasteCss">Paste gradient CSS</label
+      ><textarea
+        id="import-css"
+        rows="5"
+        placeholder="background: linear-gradient(90deg, #6C5CE7 0%, #F7C8D8 100%);"
+      ></textarea
+      ><button class="primary" id="apply-import" data-i18n="importCss">Import CSS</button>
+      <div class="divider" data-i18n="orImage">or extract from an image</div>
+      <label class="check-label"
+        ><input type="checkbox" id="import-vertical" /><span data-i18n="verticalImage"
+          >Sample vertically (top to bottom)</span
+        ></label
+      ><input type="file" id="gradient-file" accept="image/png,image/jpeg,image/webp" />
+      <p class="hint" data-i18n="imageHint">
+        Samples the center line and approximates it with editable color stops, including
+        transparency. Use a clean gradient image.
+      </p>
+    </dialog>
+    <dialog id="adjust-dialog">
+      <div class="dialog-heading">
+        <h2 data-i18n="adjust">Adjust</h2>
+        <button class="icon-btn dialog-close" aria-label="Close">
+          <svg><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <div id="adjust-preview" class="adjust-preview"></div>
+      <label class="adjust-row"
+        >Hue<input id="adjust-h" type="range" min="-180" max="180" value="0" /><output
+          id="adjust-h-value"
+          >0</output
+        ></label
+      ><label class="adjust-row"
+        >Saturation<input id="adjust-s" type="range" min="-100" max="100" value="0" /><output
+          id="adjust-s-value"
+          >0</output
+        ></label
+      ><label class="adjust-row"
+        >Lightness<input id="adjust-l" type="range" min="-100" max="100" value="0" /><output
+          id="adjust-l-value"
+          >0</output
+        ></label
+      ><button class="primary" id="apply-adjust" data-i18n="apply">Apply</button>
+    </dialog>
+    <dialog id="name-dialog">
+      <form id="name-form">
+        <div class="dialog-heading">
+          <h2 id="name-title"></h2>
+          <button type="button" class="icon-btn dialog-close" aria-label="Close">
+            <svg><use href="#i-close" /></svg>
+          </button>
+        </div>
+        <label for="name-input" data-i18n="name">Name</label
+        ><input id="name-input" required maxlength="60" autocomplete="off" /><button
+          class="primary"
+          type="submit"
+          data-i18n="save"
+        >
+          Save
+        </button>
+      </form>
+    </dialog>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+# Screenshot provenance / منبع تصاویر
+
+Actual UIAssistant captures from `tests/browser.mjs`, using an isolated headless Edge profile and the project's local fixture. No generated mockups, private websites, accounts or personal browsing data are shown.
+
+| File                 | Content                                                |
+| -------------------- | ------------------------------------------------------ |
+| `color-picker.png`   | English compact color workspace                        |
+| `gradients.png`      | Gradient editor                                        |
+| `frontend-tools.png` | Frontend tools, reference/RTL controls and measurement |
+| `workspace-fa.png`   | Persian expanded workspace                             |
+
+Regenerate with `npm run test:browser`, inspect `artifacts/`, then copy intended captures here. Screenshots use the project's [MIT license](../../LICENSE).
+
+این تصاویر از رابط واقعی افزونه در Edge مجزا و با صفحهٔ آزمایشی محلی گرفته شده‌اند؛ ماکاپ نیستند و دادهٔ شخصی ندارند. برای به‌روزرسانی، تست مرورگر را اجرا و تصاویر مناسب `artifacts/` را پس از بررسی به این پوشه کپی کنید. مجوز تصاویر MIT است.

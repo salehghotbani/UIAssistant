@@ -1,0 +1,36 @@
+{
+  "name": "uiassistant",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "A local-first color toolkit for frontend developers. Chrome, Firefox and Edge extension.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:browser": "node tests/browser.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "node scripts/check.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs",
+    "lint:firefox": "web-ext lint --source-dir dist/UIAssistant-firefox --warnings-as-errors --ignore-files \"vendor/**\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "dompurify": "^3.4.17",
+    "playwright": "^1.64.1",
+    "prettier": "^3.9.10",
+    "web-ext": "^10.8.0"
+  },
+  "license": "MIT",
+  "author": "Seyed Mohammad Saleh Ghotbani",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/salehghotbani/UIAssistant.git"
+  },
+  "bugs": {
+    "url": "https://github.com/salehghotbani/UIAssistant/issues"
+  },
+  "homepage": "https://github.com/salehghotbani/UIAssistant#readme"
+}
