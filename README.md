@@ -27,7 +27,7 @@
 | Design tokens        | Extract color, typography, spacing, radius and shadow values/frequencies; export CSS variables or JSON.                                                                                        |
 | Reference overlay    | Local PNG/JPEG/WebP image, adjustable opacity, coordinates, width and dragging.                                                                                                                |
 | Accessibility basics | Preliminary checks for missing image alternatives, unnamed controls, page language and heading-order review; downloadable JSON reports.                                                        |
-| CSS workshop         | px/rem converter with custom root, fluid `clamp()` generator with viewport preview and box-shadow builder with inset/alpha and copyable CSS.                                                   |
+| CSS workshop         | px/rem, fluid `clamp()`, box shadows, responsive/fixed Grid, four-corner radius and cubic-bezier motion; previews, validation and copyable CSS.                                                |
 | Screenshots          | Viewport, full-page scrolling/stitching, mouse-selected region, or a complete chosen scrollable element; target confirmation, local preview and manual PNG/JPEG export. No screenshot history. |
 | RTL/LTR preview      | Temporary direction changes with layout checks and exact direction/style restoration.                                                                                                          |
 
@@ -101,7 +101,7 @@ Replace the extracted files, reload the extension and reload inspected pages to 
 - **Measure:** Spacing ruler → select two elements. Read gaps and coordinate differences.
 - **Audit/export:** Layout audit, Contrast audit or Design tokens → locate findings or download CSS/JSON.
 - **Screenshot:** Screenshots → choose Visible area, Full page, Select area with mouse or Scrollable element → Choose target page → verify the title/URL → Start capture within 30 seconds → review → Save PNG/JPEG. All modes work from the toolbar popup without forcing a workspace tab. If the browser closes it during selection, reopen the icon to recover the RAM-only preview. For an area, drag on the website; for a scrollable element, click the highlighted panel (Alt selects its parent). Keep the tab active during capture. Esc or Cancel stops the operation; original scroll/styles are restored. The single-use confirmation binds the mode.
-- **Build CSS:** CSS workshop → convert px/rem, generate a fluid size between two viewport widths, or tune a box shadow; copy the result. Root size is a user-provided assumption, not a change to the target page.
+- **Build CSS:** CSS workshop → convert px/rem, generate a fluid size between two viewport widths, or tune a box shadow; copy the result. Use the Grid, radius and motion builders for layout and interaction details. Motion is opt-in and respects reduced-motion preferences. Root size is a user-provided assumption, not a change to the target page.
 - **Review accessibility basics:** Scan for missing alternatives, control names and heading jumps. Locate each finding or export JSON. These heuristics need human review; decorative `alt=""` images and labelled controls are accepted.
 - **Compare:** Choose a local reference image, adjust its opacity/position/width and enable dragging if needed. The image is fixed relative to the viewport.
 - **Undo:** Restore page removes tool layers and restores the original direction and inline priority. Reload also clears temporary changes. Esc closes selection/reference overlays.
@@ -129,7 +129,7 @@ Permissions: `activeTab`, `scripting`, `storage`, `clipboardWrite`, plus Chromiu
 
 ## Development
 
-Node.js 20+ and npm are required; Node.js 24 is locally validated.
+Node.js 20+ is required; Node.js 24 is locally validated. `node scripts/build.mjs` builds offline without npm dependencies. Development checks need npm.
 
 ```sh
 npm ci
@@ -141,15 +141,15 @@ npm run lint:firefox
 ```
 
 - `npm run preview`: UI preview at `http://127.0.0.1:4173`; page tools require installation.
-- `npm run test:browser`: isolated headless Edge integration tests on Windows. Override `BROWSER_PATH` for a compatible Chromium executable. Outputs go to ignored `artifacts/`.
+- `npm run test:browser`: isolated headless Edge integration tests on Windows. For branded Chrome 156+, set `BROWSER_PATH` to Chrome and `BROWSER_LOAD_METHOD=cdp`; the development protocol is confined to the test profile. Outputs go to ignored `artifacts/`.
 - `npm run format`: format first-party code and documentation.
-- Build produces `dist/UIAssistant.zip`, `dist/UIAssistant-firefox.zip` and their unpacked folders. Firefox's manifest is generated from the Chromium source manifest.
+- Build produces browser-specific `dist/UIAssistant-chrome.zip`, `dist/UIAssistant-edge.zip`, `dist/UIAssistant-firefox.zip` and unpacked folders, plus the compatible `dist/UIAssistant.zip`. Firefox's manifest is generated from the Chromium source manifest.
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, testing, translation and release details.
 
 ## Validation and limits
 
-- There are 43 unit/compatibility/security tests and an Edge integration suite covering the color tools, nine frontend tools, CSS workshop, real clipboard, report export, full-page tile/crop pixels, 125% zoom region selection, cancellation/error restoration, external-request and forged-input rejection, and all eight views/four dialogs in English and Persian at 790×600, 1100×800 and 480×800. Scrolling checks catch lower-page overflow and button spacing too. Firefox passes `web-ext` validation; actual Firefox execution has **not** been tested in this environment. Native screen selection and shortcut assignment require manual testing.
+- There are 47 unit/compatibility/security tests and Chrome and Edge integration suites covering the color tools, nine frontend tools, CSS workshop, real clipboard, report export, full-page tile/crop pixels, 125% zoom region selection, cancellation/error restoration, external-request and forged-input rejection, and all eight views/four dialogs in English and Persian at 790×600, 1100×800 and 480×800. Scrolling checks catch lower-page overflow and button spacing too. Firefox passes `web-ext` validation; actual Firefox execution has **not** been tested in this environment. Native screen selection and shortcut assignment require manual testing.
 - The headless harness grants all-sites and clipboard-read only to an isolated **test copy**. Neither grant enters a release. Unmodified third-party `vendor/` code is excluded from heuristic Mozilla scanning.
 - Protected browser/store pages may reject injection; `file://` needs browser-granted file access. Page-color scans cap at 30,000 elements. Frontend scans cap at 10,000 and show up to 1,000 findings. Closed shadow roots and cross-origin frame DOM are inaccessible; frontend audits do not traverse iframes.
 - Typography reports computed CSS, not the actual font file used for each glyph. Contrast is not a complete WCAG audit: images, gradients, opacity/filter/blending, uncertain canvas backgrounds, sibling occlusion and image text need visual review. Intentional overflow may be reported.
@@ -158,6 +158,10 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, testing, translation a
 - Gradients support up to 64 color and 64 opacity stops; image extraction is approximate and generates at most 32 stops. CSS import supports percentage stops and supported centered geometry. SVG export supports non-repeating linear/radial gradients; PNG/CSS cover other types. Local gradient links belong to the same extension installation. Obsolete Flash, IE6–8 and Compass-specific outputs are not implemented.
 - Full-page screenshots capture the main scrolling document, use Scrollable element to capture one nested scroller completely. This does not automatically expand every descendant or iframe. Limits: 64 tiles, 24 megapixels, 32,760 px per side, 24 MB PNG and two minutes per confirmed operation. Infinite/virtualized or dimension-changing pages need manual capture/retry. Fixed/sticky suppression is optional and does not traverse closed shadow roots; animations/video can differ across tiles.
 - Reference uploads accept PNG/JPEG/WebP up to 12 MB and are decoded at a maximum dimension of 2,048 pixels. They are not uploaded or saved in history.
+
+## Store publication
+
+Publisher: **saleh ghotbani**. The [bilingual publication kit](docs/publishing/README.md) includes store text, privacy/permission answers, real screenshots, promotional assets, reviewer source and remaining QA. Public support uses GitHub Issues, with no personal contact email in the project. Chrome is prepared only and must not be submitted yet. Store account/contact requirements, signing, manual browser QA and approval remain separate from the GitHub release. `npm run package:stores` creates source/kit archives and checksums after building.
 
 ## Contributing and license
 

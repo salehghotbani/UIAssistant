@@ -72,7 +72,7 @@ $env:BROWSER_PATH = 'C:\path\to\msedge.exe'
 npm run test:browser
 ```
 
-Use a browser build supporting unpacked extensions under automation. Tests use an isolated profile and local fixture, not your daily browser profile. Broad host and clipboard-read grants are test-only; never add them to distribution manifests.
+For installed Chrome 156+, set `BROWSER_PATH` to its executable and `BROWSER_LOAD_METHOD=cdp`; this enables only the isolated test profile’s browser-level extension development protocol. Edge uses command-line loading by default. Use a browser build supporting unpacked extensions under automation. Tests use an isolated profile and local fixture, not your daily browser profile. Broad host and clipboard-read grants are test-only; never add them to distribution manifests.
 
 Manually check toolbar `activeTab` grants, shortcuts, native EyeDropper where available, Firefox clipboard behavior, zoom/DPR, English/Persian UI, cancellation and exact undo when relevant. Record what actually ran; manifest lint is not a Firefox runtime test.
 
@@ -92,7 +92,7 @@ Do not force-push shared branches or rewrite unrelated history. The maintainer r
 
 1. For a version change, synchronize `manifest.json`, `package.json`, `package-lock.json` and the displayed version. Documentation-only changes may retain the current version.
 2. Run applicable checks, update English/Persian docs and bilingual release notes.
-3. Build both ZIPs; verify manifest version, ZIP integrity, licenses and production permissions.
+3. Build browser-specific ZIPs and the source/publication kit; verify manifest version, ZIP integrity, licenses and production permissions.
 4. Commit/push source to `main`; create a tag at the intended commit, such as `v0.3.0`. Do not move an already-published tag without discussion.
-5. Publish both ZIPs and `SHA256SUMS.txt` in GitHub Releases. Document unsigned/developer installation and Firefox testing status.
+5. Publish the browser, source and publication-kit ZIPs plus `SHA256SUMS.txt` in GitHub Releases. Document unsigned/developer installation and Firefox testing status.
 6. Verify public links and asset downloads. Store submission and Mozilla signing are separate steps; a GitHub archive is not store-signed.

@@ -1,8 +1,11 @@
 {
   "manifest_version": 3,
   "name": "UIAssistant",
-  "version": "0.7.0",
-  "description": "Local frontend tools: colors, screenshots, CSS workshop, style inspector, spacing ruler and accessibility checks.",
+  "version": "0.8.0",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
+  "author": "saleh ghotbani",
+  "homepage_url": "https://github.com/salehghotbani/UIAssistant",
   "minimum_chrome_version": "116",
   "permissions": ["activeTab", "scripting", "storage", "offscreen", "clipboardWrite"],
   "externally_connectable": { "ids": [], "matches": [] },
@@ -11,7 +14,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "UIAssistant — Frontend toolkit",
+    "default_title": "__MSG_extensionTitle__",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/16.png",

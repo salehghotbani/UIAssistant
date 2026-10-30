@@ -1998,6 +1998,7 @@ dialog {
   overflow-wrap: anywhere;
   direction: ltr;
   text-align: start;
+  white-space: pre-wrap;
   font:
     12px/1.8 Consolas,
     monospace;
@@ -2033,6 +2034,54 @@ dialog {
   background: #f4f1f8;
   border-radius: 8px;
   overflow: hidden;
+}
+.grid-preview {
+  margin-block: var(--space-4);
+  max-height: 320px;
+  overflow: auto;
+  border: 1px dashed #d9cdee;
+  border-radius: 8px;
+  padding: 12px;
+  background: #faf9fd;
+}
+.grid-preview > div {
+  min-width: 0;
+  overflow: hidden;
+  padding-block: 20px;
+  text-align: center;
+  background: #ede5fb;
+  color: #56318c;
+  border-radius: 6px;
+}
+.radius-preview {
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+  margin-block: var(--space-4);
+  background: #faf9fd;
+}
+#radius-tile {
+  display: grid;
+  place-items: center;
+  width: 160px;
+  height: 100px;
+  background: #7951cf;
+  color: white;
+}
+.easing-track {
+  margin-block: var(--space-4);
+  padding: 12px;
+  overflow: hidden;
+  direction: ltr;
+  border: 1px dashed #d9cdee;
+  background: #faf9fd;
+  border-radius: 8px;
+}
+#easing-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #7951cf;
 }
 .screenshot-consent {
   margin-block: 16px;

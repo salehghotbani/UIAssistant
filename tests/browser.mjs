@@ -25,6 +25,7 @@ for (const path of [
   'lib',
   'icons',
   'vendor',
+  '_locales',
 ])
   await cp(new URL(path, root), new URL(path, ext), { recursive: true });
 const manifest = JSON.parse(await readFile(new URL('manifest.json', ext), 'utf8'));
@@ -57,17 +58,28 @@ const context = await chromium.launchPersistentContext(
     executablePath:
       process.env.BROWSER_PATH ||
       'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-    args: [
-      `--disable-extensions-except=${fileURLToPath(ext)},${fileURLToPath(peer)}`,
-      `--load-extension=${fileURLToPath(ext)},${fileURLToPath(peer)}`,
-    ],
+    args:
+      process.env.BROWSER_LOAD_METHOD === 'cdp'
+        ? ['--enable-unsafe-extension-debugging']
+        : [
+            `--disable-extensions-except=${fileURLToPath(ext)},${fileURLToPath(peer)}`,
+            `--load-extension=${fileURLToPath(ext)},${fileURLToPath(peer)}`,
+          ],
     viewport: { width: 1100, height: 800 },
   },
 );
+// Modern branded Chrome removed --load-extension. This explicit opt-in is confined
+// to a fresh test profile and uses the browser-level development protocol.
 const failures = [];
 context.on('weberror', (error) => failures.push(error.error().message));
 let diagnosticUI;
 try {
+  if (process.env.BROWSER_LOAD_METHOD === 'cdp') {
+    const session = await context.browser().newBrowserCDPSession();
+    await session.send('Extensions.loadUnpacked', { path: fileURLToPath(ext) });
+    await session.send('Extensions.loadUnpacked', { path: fileURLToPath(peer) });
+    await session.detach();
+  }
   const worker =
     context.serviceWorkers().find((w) => w.url().endsWith('/background.js')) ||
     (await context.waitForEvent('serviceworker', {
@@ -934,6 +946,52 @@ try {
   await ui.locator('#shadow-inset').check();
   await ui.locator('#shadow-x').fill('-4');
   assert.match(await ui.locator('#shadow-result').textContent(), /inset -4px/);
+  await ui.locator('#grid-responsive').uncheck();
+  await ui.locator('#grid-columns').fill('3');
+  await ui.locator('#grid-columnGap').fill('12');
+  const gridLayout = await ui.locator('#grid-preview').evaluate((el) => ({
+    tracks: getComputedStyle(el).gridTemplateColumns.split(' ').length,
+    gap: getComputedStyle(el).columnGap,
+    top: el.children[0].offsetTop,
+    nextRow: el.children[3].offsetTop,
+  }));
+  assert.equal(gridLayout.tracks, 3);
+  assert.equal(gridLayout.gap, '12px');
+  assert.ok(gridLayout.nextRow > gridLayout.top);
+  await ui.locator('#grid-responsive').check();
+  await ui.locator('#grid-minWidth').fill('2000');
+  assert.ok(
+    await ui.locator('#grid-preview').evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+  );
+  await ui.locator('#grid-minWidth').fill('160');
+  await ui.locator('#radius-topLeft').fill('40');
+  assert.equal(
+    await ui.locator('#radius-tile').evaluate((el) => getComputedStyle(el).borderTopLeftRadius),
+    '40px',
+  );
+  await ui.locator('#radius-result + button').click();
+  assert.match(await ui.evaluate(() => navigator.clipboard.readText()), /^border-radius: 40px/);
+  await ui.locator('#radius-unit').selectOption('%');
+  await ui.locator('#radius-topLeft').fill('101');
+  assert.ok(await ui.locator('#radius-result + button').isDisabled());
+  await ui.locator('#radius-topLeft').fill('40');
+  await ui.locator('#radius-unit').selectOption('px');
+  await ui.locator('#easing-y1').fill('-1');
+  await ui.locator('#easing-y2').fill('2');
+  await ui.locator('#easing-play').click();
+  await ui.waitForTimeout(200);
+  assert.ok(await ui.locator('#easing-dot').evaluate((el) => el.getAnimations().length > 0));
+  await ui.emulateMedia({ reducedMotion: 'reduce' });
+  await ui.waitForTimeout(50);
+  assert.ok(await ui.locator('#easing-play').isDisabled());
+  assert.equal(await ui.locator('#easing-dot').evaluate((el) => el.getAnimations().length), 0);
+  await ui.emulateMedia({ reducedMotion: 'no-preference' });
+  await ui.locator('#easing-x1').fill('1.2');
+  assert.ok(await ui.locator('#easing-result + button').isDisabled());
+  await ui.locator('#easing-x1').fill('0.25');
+  console.log(
+    'PASS responsive Grid rendered tracks/narrow container, physical corner radii, real clipboard and motion/reduced-motion controls',
+  );
   await toggleLanguage();
   await ui.waitForFunction(() =>
     document.querySelector('#view-title').textContent.includes('کارگاه'),
@@ -1094,6 +1152,27 @@ try {
     await checkLayout('compact/fa/result-' + action);
   }
   assert.match(await ui.locator('#language-btn path').getAttribute('d'), /^M3 5h12/);
+  await ui.setViewportSize({ width: 1280, height: 800 });
+  await ui.evaluate(() => document.body.classList.add('workspace'));
+  for (const language of ['en', 'fa']) {
+    if ((await ui.locator('html').getAttribute('lang')) !== language) await toggleLanguage();
+    for (const name of ['picker', 'gradients', 'frontend', 'workshop', 'screenshots']) {
+      await ui.locator(`[data-view="${name}"]`).click();
+      await ui.locator('#toast').waitFor({ state: 'hidden' });
+      await ui.locator('main').evaluate((el) => (el.scrollTop = 0));
+      if (name === 'workshop')
+        await ui.locator('#grid-preview').evaluate((el) => {
+          const main = document.querySelector('main');
+          main.scrollTop +=
+            el.closest('article').getBoundingClientRect().top -
+            main.getBoundingClientRect().top -
+            16;
+        });
+      await ui.screenshot({
+        path: fileURLToPath(new URL(`artifacts/store-${language}-${name}.png`, root)),
+      });
+    }
+  }
   assert.deepEqual(failures, []);
   console.log('PASS English/Persian layouts and no browser runtime errors');
   console.log('Browser integration checks passed. Screenshots saved in artifacts/.');

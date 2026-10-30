@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { convertUnits, fluidSize, shadowCSS } from '../lib/css-tools.js';
+import {
+  convertUnits,
+  fluidSize,
+  shadowCSS,
+  gridCSS,
+  radiusCSS,
+  easingCSS,
+} from '../lib/css-tools.js';
 
 test('unit conversion uses the configured root and round-trips fractional values', () => {
   assert.equal(convertUnits(24, 16), 1.5);
@@ -53,4 +60,39 @@ test('shadows keep signed offsets, spread, inset and explicit alpha', () => {
   assert.match(shadowCSS({ ...values, opacity: 0, inset: false }), /^-4px.*0\)$/);
   for (const patch of [{ blur: -1 }, { opacity: 101 }, { color: 'red' }, { x: Infinity }])
     assert.throws(() => shadowCSS({ ...values, ...patch }));
+});
+
+test('grid output guards narrow containers and refuses unbounded or injected track values', () => {
+  const values = { columns: 3, minWidth: 160, columnGap: 16, rowGap: 24 };
+  assert.match(gridCSS(values), /minmax\(min\(100%, 160px\), 1fr\)/);
+  assert.match(gridCSS({ ...values, responsive: false }), /repeat\(3, minmax\(0, 1fr\)\)/);
+  for (const patch of [
+    { columns: 2.5 },
+    { columns: 13 },
+    { minWidth: 0 },
+    { rowGap: -1 },
+    { columnGap: Infinity },
+    { minWidth: '1px);color:red' },
+  ])
+    assert.throws(() => gridCSS({ ...values, ...patch }));
+});
+
+test('radius output preserves physical corner order and validates percentage limits', () => {
+  const values = { topLeft: 1, topRight: 2, bottomRight: 3, bottomLeft: 4 };
+  assert.equal(radiusCSS(values), 'border-radius: 1px 2px 3px 4px;');
+  assert.equal(radiusCSS({ ...values, unit: '%' }), 'border-radius: 1% 2% 3% 4%;');
+  for (const patch of [
+    { topLeft: -1 },
+    { bottomRight: NaN },
+    { unit: 'em' },
+    { unit: '%', bottomLeft: 101 },
+  ])
+    assert.throws(() => radiusCSS({ ...values, ...patch }));
+});
+
+test('motion curves permit Y overshoot while keeping time control points in CSS bounds', () => {
+  const values = { x1: 0.25, y1: -1, x2: 0.75, y2: 2 };
+  assert.equal(easingCSS(values), 'cubic-bezier(0.25, -1, 0.75, 2)');
+  for (const patch of [{ x1: -0.1 }, { x2: 1.1 }, { y1: -4 }, { y2: Infinity }])
+    assert.throws(() => easingCSS({ ...values, ...patch }));
 });

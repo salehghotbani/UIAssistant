@@ -6,7 +6,7 @@
 
 UIAssistant is a browser extension, not an operating-system security boundary. Its screenshot and sampling interfaces are intended for the user of the current browser profile. This review covers the extension's messaging, screenshot authorization, injected tools, local storage, content policy and dependency advisories. It is an implementation review with automated regression tests, not an independent penetration-test certification.
 
-## Controls in v0.7.0
+## Controls in v0.8.0
 
 - External messaging is explicitly disabled with empty `externally_connectable.ids` and `matches`. There are no external-message listeners, native-messaging bridge, localhost service, debugger API or web-accessible extension pages.
 - Privileged commands require this extension's browser-supplied sender ID, the exact top-level `popup.html` URL and an active document. Checking an extension-origin prefix alone is no longer sufficient.

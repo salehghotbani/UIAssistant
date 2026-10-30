@@ -17,6 +17,20 @@ test('Firefox manifest uses an event page and declares no data collection', asyn
   assert.ok(source.permissions.includes('offscreen'));
 });
 
+test('store metadata identifies the requested publisher and localizes without contact email', async () => {
+  const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url)));
+  assert.equal(manifest.author, 'saleh ghotbani');
+  assert.equal(manifest.default_locale, 'en');
+  for (const locale of ['en', 'fa']) {
+    const messages = JSON.parse(
+      await readFile(new URL(`../_locales/${locale}/messages.json`, import.meta.url)),
+    );
+    assert.ok(messages.extensionDescription.message.length <= 132);
+    assert.ok(messages.extensionTitle.message.includes('UIAssistant'));
+    assert.ok(!messages.extensionDescription.message.includes('@'));
+  }
+});
+
 test('Firefox clipboard uses its background DOM without Chromium APIs', async () => {
   const values = [];
   await copyText(

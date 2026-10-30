@@ -1,0 +1,25 @@
+{
+  "version": "0.8.0",
+  "name": "UIAssistant",
+  "publisher": "saleh ghotbani",
+  "homepage": "https://github.com/salehghotbani/UIAssistant",
+  "support_url": "https://github.com/salehghotbani/UIAssistant/issues",
+  "privacy_url": "https://github.com/salehghotbani/UIAssistant/blob/main/PRIVACY.md",
+  "license": "MIT",
+  "price": "free",
+  "locales": {
+    "en": {
+      "summary": "Frontend toolkit: colors, screenshots, CSS generators, style inspector, spacing ruler and accessibility checks.",
+      "description_file": "listing.en.md"
+    },
+    "fa": {
+      "summary": "ابزار فرانت‌اند: رنگ، عکس صفحه، ساخت CSS، بررسی استایل، اندازه‌گیری فاصله و بررسی اولیهٔ دسترس‌پذیری.",
+      "description_file": "listing.fa.md"
+    }
+  },
+  "submission": {
+    "chrome": "hold_do_not_upload",
+    "edge": "prepared_owner_account_and_manual_QA_required",
+    "firefox": "prepared_owner_account_manual_QA_and_Mozilla_signing_required"
+  }
+}

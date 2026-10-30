@@ -61,8 +61,11 @@ export async function generateIcons(root) {
         const total = [0, 0, 0, 0];
         for (let sy = 0; sy < aa; sy++)
           for (let sx = 0; sx < aa; sx++) {
-            const px = (x + (sx + 0.5) / aa) / size,
-              py = (y + (sy + 0.5) / aa) / size;
+            const u = (x + (sx + 0.5) / aa) / size,
+              v = (y + (sy + 0.5) / aa) / size;
+            // Store listing icon: 96px square artwork inside a transparent 128px image.
+            const px = size === 128 ? ((u - 0.125) * 0.92) / 0.75 + 0.04 : u,
+              py = size === 128 ? ((v - 0.125) * 0.92) / 0.75 + 0.04 : v;
             const dx = Math.max(0.24 - px, px - 0.76, 0),
               dy = Math.max(0.24 - py, py - 0.76, 0);
             if (dx * dx + dy * dy > 0.2 * 0.2) continue;
