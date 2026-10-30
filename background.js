@@ -4,6 +4,7 @@ import { parseColor, formatColor } from './lib/color.js';
 import { readStore, writeStore } from './lib/store.js';
 import { pageAnalyzer } from './lib/analyzer.js';
 import { pageTools } from './lib/page-tools.js';
+import { captureScreenshot } from './lib/screenshot-capture.js';
 import {
   assertMessage,
   isWorkspaceSender,
@@ -28,6 +29,7 @@ const securityReady = (async () => {
 })();
 securityReady.catch(() => {});
 let storeQueue = Promise.resolve();
+const screenshotJobs = new Map();
 function serialized(fn) {
   const task = storeQueue.then(fn);
   storeQueue = task.catch(() => {});
@@ -107,6 +109,7 @@ async function pageReady(tabId) {
   return { ...tab, tabId, nonce: document.result.nonce, documentId: document.documentId };
 }
 async function start(tabId, mode = 'pixel') {
+  if (screenshotJobs.has(tabId)) throw Error('Finish or cancel the current screenshot first.');
   if (!['pixel', 'area'].includes(mode)) throw Error('Invalid sampling mode.');
   const identity = await pageReady(tabId);
   await api.scripting.executeScript({ target: { tabId }, func: pageTools, args: ['cancel'] });
@@ -129,6 +132,7 @@ async function start(tabId, mode = 'pixel') {
   );
 }
 async function resample(tabId) {
+  if (screenshotJobs.has(tabId)) throw Error('Finish or cancel the current screenshot first.');
   const state = await readStore(),
     last = state.lastSample;
   if (!last) throw new Error('Pick a page color first to save a sample location.');
@@ -159,32 +163,65 @@ async function handle(message, sender) {
   const tabId = fromWorkspace ? message.tabId : sender.tab?.id;
   switch (message.type) {
     case 'SCREENSHOT_PREPARE': {
+      if (screenshotJobs.has(tabId)) throw Error('A screenshot is already running in this tab.');
+      const mode = message.mode || 'viewport';
+      if (!['viewport', 'full', 'region'].includes(mode)) throw Error('Invalid screenshot mode.');
       const identity = await pageReady(tabId);
-      const ticket = await grants.issue('screenshot', identity, 30000, { owner: ownerKey(sender) });
+      const ticket = await grants.issue('screenshot', identity, 30000, {
+        owner: ownerKey(sender),
+        mode,
+        hideFixed: message.hideFixed !== false,
+        language: message.language === 'fa' ? 'fa' : 'en',
+      });
       return { ticket, title: identity.title || '', url: identity.url };
     }
     case 'SCREENSHOT_CAPTURE': {
+      if (screenshotJobs.has(tabId)) throw Error('A screenshot is already running in this tab.');
       const identity = await grants.use(
         message.ticket,
         'screenshot',
         (g) => g.owner === ownerKey(sender) && g.tabId === tabId,
         true,
       );
-      await verifyDocument(identity);
-      await api.scripting.executeScript({
-        target: { tabId },
-        func: pageTools,
-        args: ['capture-cleanup'],
-      });
-      await api.scripting.executeScript({ target: { tabId }, func: pageAnalyzer, args: ['clear'] });
-      await api.tabs.sendMessage(tabId, { type: 'UIA_HIDE' }, { frameId: 0 });
-      await new Promise((r) => setTimeout(r, 80));
-      return { image: await capture(identity), capturedAt: Date.now() };
+      const job = { ownerTab: sender.tab?.id, cancelled: false };
+      screenshotJobs.set(tabId, job);
+      try {
+        await verifyDocument(identity);
+        await api.scripting.executeScript({
+          target: { tabId },
+          func: pageTools,
+          args: ['capture-cleanup'],
+        });
+        await api.scripting.executeScript({
+          target: { tabId },
+          func: pageAnalyzer,
+          args: ['clear'],
+        });
+        await api.tabs.sendMessage(tabId, { type: 'UIA_HIDE' }, { frameId: 0 });
+        await new Promise((r) => setTimeout(r, 80));
+        const image =
+          identity.mode === 'viewport'
+            ? await capture(identity)
+            : await captureScreenshot({
+                identity,
+                mode: identity.mode,
+                hideFixed: identity.hideFixed,
+                language: identity.language,
+                api,
+                capture,
+                verify: verifyDocument,
+                isOwnerAlive: async () => !job.cancelled,
+              });
+        return { image, capturedAt: Date.now() };
+      } finally {
+        screenshotJobs.delete(tabId);
+      }
     }
     case 'SCREENSHOT_CANCEL':
       await grants.use(message.ticket, 'screenshot', (g) => g.owner === ownerKey(sender), true);
       return {};
     case 'FRONTEND_TOOL': {
+      if (screenshotJobs.has(tabId)) throw Error('Finish or cancel the current screenshot first.');
       if (
         ![
           'inspect',
@@ -290,7 +327,15 @@ async function handle(message, sender) {
       });
     case 'OPEN_WORKSPACE':
       if (!fromWorkspace) await pageGrant(message, sender, 'notification', true);
-      await api.tabs.create({ url: api.runtime.getURL('popup.html') + `?tab=${tabId}` });
+      {
+        const url = new URL(api.runtime.getURL('popup.html'));
+        url.searchParams.set('tab', tabId);
+        if (fromWorkspace && message.view === 'screenshots') {
+          url.searchParams.set('view', 'screenshots');
+          if (['full', 'region'].includes(message.mode)) url.searchParams.set('mode', message.mode);
+        }
+        await api.tabs.create({ url: url.href });
+      }
       return {};
     default:
       throw new Error('Unknown UIAssistant action.');
@@ -339,7 +384,11 @@ api.runtime.onInstalled.addListener(async () => {
   const state = await readStore();
   await api.action.setPopup({ popup: state.settings.singleClick ? '' : 'popup.html' });
 });
-api.tabs.onRemoved.addListener((tabId) => grants.revokeTab(tabId).catch(() => {}));
+api.tabs.onRemoved.addListener((tabId) => {
+  grants.revokeTab(tabId).catch(() => {});
+  for (const [target, job] of screenshotJobs)
+    if (target === tabId || job.ownerTab === tabId) job.cancelled = true;
+});
 api.tabs.onUpdated.addListener((tabId, change) => {
   if (change.status === 'loading' || change.url) grants.revokeTab(tabId).catch(() => {});
 });

@@ -26,7 +26,7 @@
 | Reference overlay    | Local PNG/JPEG/WebP image, adjustable opacity, coordinates, width and dragging.                                                                                                         |
 | Accessibility basics | Preliminary checks for missing image alternatives, unnamed controls, page language and heading-order review; downloadable JSON reports.                                                 |
 | CSS workshop         | px/rem converter with custom root, fluid `clamp()` generator with viewport preview and box-shadow builder with inset/alpha and copyable CSS.                                            |
-| Screenshots          | Visible-area capture with target confirmation, local preview, manual PNG/JPEG export and preview deletion. No upload or screenshot history.                                             |
+| Screenshots          | Viewport, full-page scrolling/stitching, or mouse-selected region; target confirmation, local preview and manual PNG/JPEG export. No screenshot history.                                |
 | RTL/LTR preview      | Temporary direction changes with layout checks and exact direction/style restoration.                                                                                                   |
 
 English and Persian interfaces, RTL layout, compact popup and expanded workspace are included. Use **فا / EN** to switch languages.
@@ -44,6 +44,10 @@ English and Persian interfaces, RTL layout, compact popup and expanded workspace
 ### Screenshots
 
 ![Local screenshot preview with manual export controls](docs/images/screenshots.png)
+
+![Full-page screenshot stitched across horizontal and vertical scroll](docs/images/fullpage-capture.png)
+
+![Mouse-selected region cropped at 125% browser zoom](docs/images/region-capture.png)
 
 ### CSS workshop
 
@@ -92,7 +96,7 @@ Replace the extracted files, reload the extension and reload inspected pages to 
 - **Inspect:** Frontend tools → Element inspector or Typography → select an element. Copy CSS from the page panel or workspace.
 - **Measure:** Spacing ruler → select two elements. Read gaps and coordinate differences.
 - **Audit/export:** Layout audit, Contrast audit or Design tokens → locate findings or download CSS/JSON.
-- **Screenshot:** Screenshots → Choose target page → verify the displayed title/URL → Capture visible area within 30 seconds → review → Save PNG/JPEG. Temporary tool overlays are removed; page direction and scroll stay unchanged. The confirmation is single-use; choose the page again for another image.
+- **Screenshot:** Screenshots → choose Visible area, Full page or Select area with mouse → Choose target page → verify the title/URL → Start capture within 30 seconds → review → Save PNG/JPEG. Full/area modes open the expanded workspace from a compact popup. For an area, drag on the website; for full page, keep the tab active while it scrolls. Esc or Cancel stops the operation; original scroll/styles are restored. The single-use confirmation binds the mode.
 - **Build CSS:** CSS workshop → convert px/rem, generate a fluid size between two viewport widths, or tune a box shadow; copy the result. Root size is a user-provided assumption, not a change to the target page.
 - **Review accessibility basics:** Scan for missing alternatives, control names and heading jumps. Locate each finding or export JSON. These heuristics need human review; decorative `alt=""` images and labelled controls are accepted.
 - **Compare:** Choose a local reference image, adjust its opacity/position/width and enable dragging if needed. The image is fixed relative to the viewport.
@@ -141,13 +145,14 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, testing, translation a
 
 ## Validation and limits
 
-- There are 33 unit/compatibility/security tests and an Edge integration suite covering the color tools, nine frontend tools, CSS workshop, real clipboard, report export, external-request and forged-input rejection, and all eight views/four dialogs in English and Persian at 790×600, 1100×800 and 480×800. Scrolling checks catch lower-page overflow and button spacing too. Firefox passes `web-ext` validation; actual Firefox execution has **not** been tested in this environment. Native screen selection and shortcut assignment require manual testing.
+- There are 39 unit/compatibility/security tests and an Edge integration suite covering the color tools, nine frontend tools, CSS workshop, real clipboard, report export, full-page tile/crop pixels, 125% zoom region selection, cancellation/error restoration, external-request and forged-input rejection, and all eight views/four dialogs in English and Persian at 790×600, 1100×800 and 480×800. Scrolling checks catch lower-page overflow and button spacing too. Firefox passes `web-ext` validation; actual Firefox execution has **not** been tested in this environment. Native screen selection and shortcut assignment require manual testing.
 - The headless harness grants all-sites and clipboard-read only to an isolated **test copy**. Neither grant enters a release. Unmodified third-party `vendor/` code is excluded from heuristic Mozilla scanning.
 - Protected browser/store pages may reject injection; `file://` needs browser-granted file access. Page-color scans cap at 30,000 elements. Frontend scans cap at 10,000 and show up to 1,000 findings. Closed shadow roots and cross-origin frame DOM are inaccessible; frontend audits do not traverse iframes.
 - Typography reports computed CSS, not the actual font file used for each glyph. Contrast is not a complete WCAG audit: images, gradients, opacity/filter/blending, uncertain canvas backgrounds, sibling occlusion and image text need visual review. Intentional overflow may be reported.
 - Accessibility basics uses preliminary DOM/name heuristics, not the complete accessible-name algorithm or a WCAG conformance verdict. Hidden content and frames are excluded. Heading jumps are review hints. See [WAI preliminary checks](https://www.w3.org/WAI/test-evaluate/preliminary/) and [form labels](https://www.w3.org/WAI/tutorials/forms/labels/). Fluid type uses [CSS clamp](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/clamp) with rem + vw; test text zoom in the destination page.
 - RTL/LTR previews do not prove semantic alignment or reading order. Measurements use axis-aligned bounding rectangles. Resampling needs the same page, scroll, viewport and zoom.
 - Gradients support up to 64 color and 64 opacity stops; image extraction is approximate and generates at most 32 stops. CSS import supports percentage stops and supported centered geometry. SVG export supports non-repeating linear/radial gradients; PNG/CSS cover other types. Local gradient links belong to the same extension installation. Obsolete Flash, IE6–8 and Compass-specific outputs are not implemented.
+- Full-page screenshots capture the main scrolling document, not expanded nested scrollers. Limits: 64 tiles, 24 megapixels, 32,760 px per side, 24 MB PNG and two minutes per confirmed operation. Infinite/virtualized or dimension-changing pages need manual capture/retry. Fixed/sticky suppression is optional and does not traverse closed shadow roots; animations/video can differ across tiles.
 - Reference uploads accept PNG/JPEG/WebP up to 12 MB and are decoded at a maximum dimension of 2,048 pixels. They are not uploaded or saved in history.
 
 ## Contributing and license

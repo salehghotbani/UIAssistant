@@ -1126,7 +1126,14 @@ initScreenshots({
   activate: async () => {
     if (targetTab) await api.tabs.update(targetTab, { active: true });
   },
+  reveal: async () => {
+    if (!isExtension || !document.body.classList.contains('workspace')) return;
+    const [active] = await api.tabs.query({ active: true, currentWindow: true });
+    const current = await api.tabs.getCurrent();
+    if (active?.id === targetTab && current?.id)
+      await api.tabs.update(current.id, { active: true });
+  },
 });
 initButtonIcons();
-setView(view);
+setView(new URL(location.href).searchParams.get('view') === 'screenshots' ? 'screenshots' : view);
 document.documentElement.dataset.ready = 'true';

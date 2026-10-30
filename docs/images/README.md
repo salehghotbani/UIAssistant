@@ -12,6 +12,8 @@ Actual UIAssistant captures from `tests/browser.mjs`, using an isolated headless
 
 `screenshots.png` shows the visible-area screenshot preview and local export controls.
 
+`fullpage-capture.png` shows a stitched two-axis document; `region-capture.png` shows a mouse-selected crop at 125% browser zoom. Both use the same local test fixture and real capture pipeline.
+
 Regenerate with `npm run test:browser`, inspect `artifacts/`, then copy intended captures here. Screenshots use the project's [MIT license](../../LICENSE).
 
 این تصاویر از رابط واقعی افزونه در Edge مجزا و با صفحهٔ آزمایشی محلی گرفته شده‌اند؛ ماکاپ نیستند و دادهٔ شخصی ندارند. برای به‌روزرسانی، تست مرورگر را اجرا و تصاویر مناسب `artifacts/` را پس از بررسی به این پوشه کپی کنید. مجوز تصاویر MIT است.

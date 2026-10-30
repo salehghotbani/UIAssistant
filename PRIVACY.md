@@ -2,6 +2,8 @@
 
 **English** · [فارسی](PRIVACY.fa.md)
 
+Full-page mode scrolls the main document and temporarily pauses CSS animation/transitions, disables smooth/snap scrolling, and optionally hides repeated fixed/sticky elements; cleanup restores original scroll and modified style properties. Region mode places a temporary mouse-selection overlay and returns coordinates only. Both keep processed image data in trusted extension memory, with a two-minute operation limit. Expanded workspace is used so page selection does not close the preview.
+
 UIAssistant has no account system, analytics, advertising, remote code, or telemetry. It makes no network requests to an application server.
 
 Color selections, up to 200 unique history entries, settings, custom palettes, and gradient presets are stored using the browser’s `storage.local` on the current browser profile. They are not synchronized through this extension. A last-sample record contains the page URL, tab ID, viewport, scroll position, and normalized sample coordinates so the extension can safely resample the same location. Screenshots are processed in memory, not uploaded or saved to screenshot history.

@@ -2042,6 +2042,18 @@ dialog {
   background: #faf7ff;
   font-size: 12px;
 }
+.screenshot-mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+.screenshot-mode select {
+  min-width: 180px;
+  max-width: 100%;
+}
 #screenshot-target {
   white-space: pre-wrap;
   overflow-wrap: anywhere;

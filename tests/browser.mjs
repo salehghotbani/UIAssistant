@@ -511,6 +511,182 @@ try {
   console.log(
     'PASS confirmed viewport screenshot, PNG/JPEG bytes, no screenshot storage, replay and same-URL navigation denial',
   );
+  async function prepareScreenshot(mode) {
+    await ui.bringToFront();
+    await ui.locator('[data-view="screenshots"]').click();
+    await ui.locator('#screenshot-mode').selectOption(mode);
+    await ui.locator('#screenshot-prepare').click();
+    await ui.locator('.screenshot-consent').waitFor({ state: 'visible' });
+    await ui.locator('#screenshot-capture').click();
+  }
+  async function screenshotPixel(x, y) {
+    return ui.locator('#screenshot-image').evaluate(
+      (img, { x, y }) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        return [...ctx.getImageData(x, y, 1, 1).data];
+      },
+      { x, y },
+    );
+  }
+  await page.evaluate(() => {
+    const el = document.createElement('div');
+    el.id = 'region-fixture';
+    el.style.cssText =
+      'position:fixed;left:40px;top:80px;width:300px;height:200px;background:#d61e3c;z-index:100';
+    document.body.append(el);
+  });
+  await worker.evaluate((id) => chrome.tabs.setZoom(id, 1.25), tabId);
+  const beforeRegion = await countCaptures();
+  await prepareScreenshot('region');
+  await page.locator('[data-uiassistant-tool]').waitFor({ state: 'attached' });
+  await page.evaluate(() =>
+    window.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientX: 184, clientY: 192, button: 0 }),
+    ),
+  );
+  assert.equal(await countCaptures(), beforeRegion);
+  await page.mouse.move(184, 192);
+  await page.mouse.down();
+  await page.mouse.move(64, 112, { steps: 5 });
+  await page.mouse.up();
+  await ui.locator('#screenshot-image').waitFor({ state: 'visible' });
+  assert.deepEqual(
+    await ui.locator('#screenshot-image').evaluate((img) => [img.naturalWidth, img.naturalHeight]),
+    [150, 100],
+  );
+  assert.deepEqual(await screenshotPixel(75, 50), [214, 30, 60, 255]);
+  await ui.locator('#toast').waitFor({ state: 'hidden' });
+  await ui.screenshot({ path: fileURLToPath(new URL('artifacts/region-capture.png', root)) });
+  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  await prepareScreenshot('region');
+  await page.locator('[data-uiassistant-tool]').waitFor({ state: 'attached' });
+  const beforeCancelRegion = await countCaptures();
+  await page.keyboard.press('Escape');
+  await ui.waitForFunction(() =>
+    document.querySelector('#screenshot-status').textContent.includes('cancelled'),
+  );
+  assert.equal(await countCaptures(), beforeCancelRegion);
+  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  await worker.evaluate((id) => chrome.tabs.setZoom(id, 1), tabId);
+  await page.locator('#region-fixture').evaluate((el) => el.remove());
+  console.log(
+    'PASS reverse mouse selection at 125% zoom, cropped pixel color, synthetic-input denial and region cancellation',
+  );
+  await page.evaluate(() => {
+    document.body.replaceChildren();
+    document.body.style.cssText = 'margin:0;width:1460px;height:1900px;background:white;';
+    document.documentElement.dir = 'ltr';
+    document.documentElement.style.setProperty('scroll-behavior', 'smooth', 'important');
+    document.documentElement.style.setProperty('scroll-snap-type', 'y mandatory', 'important');
+    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+    for (let row = 0; row < 3; row++)
+      for (let col = 0; col < 2; col++) {
+        const el = document.createElement('div');
+        el.style.cssText = `position:absolute;left:${col * 730}px;top:${row * 650}px;width:730px;height:${row === 2 ? 600 : 650}px;background:${colors[row * 2 + col]}`;
+        document.body.append(el);
+      }
+    const fixed = document.createElement('div');
+    fixed.id = 'capture-fixed';
+    fixed.style.cssText =
+      'position:fixed;left:0;top:0;width:100%;height:24px;background:#112233;z-index:10';
+    document.body.append(fixed);
+    window.scrollTo({ left: 100, top: 300, behavior: 'instant' });
+  });
+  const originalScroll = await page.evaluate(() => [scrollX, scrollY]);
+  const originalStyles = await page.evaluate(() => [
+    document.documentElement.getAttribute('style'),
+    document.body.getAttribute('style'),
+    document.querySelector('#capture-fixed').getAttribute('style'),
+  ]);
+  await prepareScreenshot('full');
+  await ui.locator('#screenshot-image').waitFor({ state: 'visible', timeout: 30000 });
+  assert.deepEqual(
+    await ui.locator('#screenshot-image').evaluate((img) => [img.naturalWidth, img.naturalHeight]),
+    [1460, 1900],
+  );
+  for (const [x, y, rgb] of [
+    [100, 400, [255, 0, 0]],
+    [1200, 400, [0, 255, 0]],
+    [100, 900, [0, 0, 255]],
+    [1200, 900, [255, 255, 0]],
+    [100, 1800, [255, 0, 255]],
+    [1400, 1850, [0, 255, 255]],
+  ])
+    assert.deepEqual((await screenshotPixel(x, y)).slice(0, 3), rgb, `tile pixel ${x},${y}`);
+  await ui.locator('#toast').waitFor({ state: 'hidden' });
+  await ui.screenshot({ path: fileURLToPath(new URL('artifacts/fullpage-capture.png', root)) });
+  assert.deepEqual(await page.evaluate(() => [scrollX, scrollY]), originalScroll);
+  assert.deepEqual(
+    await page.evaluate(() => [
+      document.documentElement.getAttribute('style'),
+      document.body.getAttribute('style'),
+      document.querySelector('#capture-fixed').getAttribute('style'),
+    ]),
+    originalStyles,
+  );
+  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  await prepareScreenshot('full');
+  await page.locator('[data-uiassistant-tool]').waitFor({ state: 'attached' });
+  await page.keyboard.press('Escape');
+  await ui.waitForFunction(() =>
+    document.querySelector('#screenshot-status').textContent.includes('cancelled'),
+  );
+  assert.deepEqual(await page.evaluate(() => [scrollX, scrollY]), originalScroll);
+  assert.deepEqual(
+    await page.evaluate(() => [
+      document.documentElement.getAttribute('style'),
+      document.body.getAttribute('style'),
+      document.querySelector('#capture-fixed').getAttribute('style'),
+    ]),
+    originalStyles,
+  );
+  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  await page.evaluate(() => (document.body.style.height = '40000px'));
+  const beforeLarge = await countCaptures();
+  await prepareScreenshot('full');
+  await ui.waitForFunction(() =>
+    document.querySelector('#screenshot-status').textContent.includes('too large'),
+  );
+  assert.equal(await countCaptures(), beforeLarge);
+  assert.deepEqual(await page.evaluate(() => [scrollX, scrollY]), originalScroll);
+  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  assert.equal(
+    await page.evaluate(() => document.documentElement.getAttribute('style')),
+    originalStyles[0],
+  );
+  await page.evaluate(() => (document.body.style.height = '1900px'));
+  await prepareScreenshot('full');
+  await page.locator('[data-uiassistant-tool]').waitFor({ state: 'attached' });
+  await ui.bringToFront();
+  await ui.waitForFunction(
+    () =>
+      document.querySelector('#screenshot-status').textContent.includes('target tab changed') ||
+      document.querySelector('#screenshot-status').textContent.includes('cancelled'),
+  );
+  assert.deepEqual(await page.evaluate(() => [scrollX, scrollY]), originalScroll);
+  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  assert.deepEqual(
+    await page.evaluate(() => [
+      document.documentElement.getAttribute('style'),
+      document.body.getAttribute('style'),
+      document.querySelector('#capture-fixed').getAttribute('style'),
+    ]),
+    originalStyles,
+  );
+  console.log(
+    'PASS oversized-page rejection before capture and inactive-tab abort with restoration',
+  );
+  await page.reload();
+  await ui.locator('#screenshot-mode').selectOption('viewport');
+  await prepareScreenshot('viewport');
+  await ui.locator('#screenshot-image').waitFor({ state: 'visible' });
+  console.log(
+    'PASS two-axis full-page stitching, bottom/right pixels, exact style/scroll restoration, and full-page cancellation',
+  );
   await ui.locator('#toast').waitFor({ state: 'hidden' });
   await ui.screenshot({
     path: fileURLToPath(new URL('artifacts/frontend-tools.png', root)),

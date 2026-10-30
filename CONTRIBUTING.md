@@ -42,6 +42,8 @@ Injected `pageAnalyzer` and `pageTools` functions are serialized by the browser.
 
 ## Implementation expectations
 
+`lib/capture-page.js` is serialized into the isolated top frame; keep it self-contained and return explicit success/error envelopes. `lib/screenshot-capture.js` crops/stitches in the trusted background context; `lib/screenshot-math.js` enforces tile/pixel bounds. Preserve the restoration finally path and page watchdog, document/mode authorization and trusted-event checks. New screenshot modes require browser checks for pixel accuracy and cleanup on cancellation/failure.
+
 Read [SECURITY.md](SECURITY.md) before changing capture, messaging or storage. Keep capabilities scoped/expiring, external connections disabled, screenshot saves manual, and security regression tests intact. The documented unpatched development-tool advisory must not be hidden by downgrading or disabling audit checks.
 
 - Preserve Firefox and Chromium behavior through the `api` adapter. Do not assume Firefox has service workers/offscreen documents.
