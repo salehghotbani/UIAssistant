@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "UIAssistant",
-  "version": "0.3.0",
-  "description": "Your frontend color workspace: eyedropper, page palettes, advanced color picker and CSS gradients.",
+  "version": "0.4.0",
+  "description": "Local frontend tools: color picker, CSS workshop, style inspector, spacing ruler and accessibility checks.",
   "minimum_chrome_version": "116",
   "permissions": ["activeTab", "scripting", "storage", "offscreen", "clipboardWrite"],
   "background": {
@@ -10,7 +10,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "UIAssistant — Color workspace",
+    "default_title": "UIAssistant — Frontend toolkit",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/16.png",

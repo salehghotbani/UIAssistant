@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>UIAssistant · Color workspace</title>
+    <title>UIAssistant · Frontend toolkit</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg">
+    <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
       <defs>
         <symbol id="i-picker" viewBox="0 0 24 24">
           <path d="m15 4 5 5M4 20l4-1L20 7a2.1 2.1 0 0 0-3-3L5 16l-1 4Zm7-10 3 3" />
@@ -99,7 +99,7 @@
           <button class="quiet sidebar-settings" id="settings-btn">
             <svg><use href="#i-settings" /></svg><span data-i18n="settings">Preferences</span>
           </button>
-          <div class="version"><span class="dot"></span> LOCAL FIRST <span>v0.3</span></div>
+          <div class="version"><span class="dot"></span> LOCAL FIRST <span>v0.4</span></div>
         </div>
       </aside>
       <div class="main-wrap">
@@ -109,7 +109,7 @@
             <h1 id="view-title">Color picker<span class="title-dot">.</span></h1>
           </div>
           <div class="header-actions">
-            <button id="language-btn" class="quiet language" title="Change language">فا</button
+            <button id="language-btn" class="quiet language" data-title="changeLanguage">فا</button
             ><button
               class="icon-btn"
               id="expand-btn"
@@ -276,15 +276,15 @@
             </div>
             <div class="gradient-preview checker" id="gradient-preview">
               <div id="gradient-paint"></div>
-              <span class="preview-badge">LIVE PREVIEW</span>
+              <span class="preview-badge" data-i18n="livePreview">LIVE PREVIEW</span>
             </div>
             <div class="gradient-options">
               <label
                 ><span data-i18n="type">Type</span
                 ><select id="gradient-type">
-                  <option value="linear">Linear</option>
-                  <option value="radial">Radial</option>
-                  <option value="conic">Conic</option>
+                  <option value="linear" data-i18n="linear">Linear</option>
+                  <option value="radial" data-i18n="radial">Radial</option>
+                  <option value="conic" data-i18n="conic">Conic</option>
                 </select></label
               ><label
                 ><span data-i18n="angle">Angle</span
@@ -463,7 +463,7 @@
     <dialog id="settings-dialog">
       <div class="dialog-heading">
         <h2 data-i18n="settings">Preferences</h2>
-        <button class="icon-btn dialog-close" aria-label="Close">
+        <button class="icon-btn dialog-close" data-title="close" aria-label="Close">
           <svg><use href="#i-close" /></svg>
         </button>
       </div>
@@ -518,7 +518,7 @@
     <dialog id="import-dialog">
       <div class="dialog-heading">
         <h2 data-i18n="importGradient">Import a gradient</h2>
-        <button class="icon-btn dialog-close" aria-label="Close">
+        <button class="icon-btn dialog-close" data-title="close" aria-label="Close">
           <svg><use href="#i-close" /></svg>
         </button>
       </div>
@@ -543,23 +543,26 @@
     <dialog id="adjust-dialog">
       <div class="dialog-heading">
         <h2 data-i18n="adjust">Adjust</h2>
-        <button class="icon-btn dialog-close" aria-label="Close">
+        <button class="icon-btn dialog-close" data-title="close" aria-label="Close">
           <svg><use href="#i-close" /></svg>
         </button>
       </div>
       <div id="adjust-preview" class="adjust-preview"></div>
       <label class="adjust-row"
-        >Hue<input id="adjust-h" type="range" min="-180" max="180" value="0" /><output
+        ><span data-i18n="hue">Hue</span
+        ><input id="adjust-h" type="range" min="-180" max="180" value="0" /><output
           id="adjust-h-value"
           >0</output
         ></label
       ><label class="adjust-row"
-        >Saturation<input id="adjust-s" type="range" min="-100" max="100" value="0" /><output
+        ><span data-i18n="saturation">Saturation</span
+        ><input id="adjust-s" type="range" min="-100" max="100" value="0" /><output
           id="adjust-s-value"
           >0</output
         ></label
       ><label class="adjust-row"
-        >Lightness<input id="adjust-l" type="range" min="-100" max="100" value="0" /><output
+        ><span data-i18n="lightness">Lightness</span
+        ><input id="adjust-l" type="range" min="-100" max="100" value="0" /><output
           id="adjust-l-value"
           >0</output
         ></label
@@ -569,7 +572,7 @@
       <form id="name-form">
         <div class="dialog-heading">
           <h2 id="name-title"></h2>
-          <button type="button" class="icon-btn dialog-close" aria-label="Close">
+          <button type="button" class="icon-btn dialog-close" data-title="close" aria-label="Close">
             <svg><use href="#i-close" /></svg>
           </button>
         </div>

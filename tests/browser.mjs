@@ -226,6 +226,60 @@ try {
   console.log(
     'PASS layout findings, real background contrast, manual-review flags and design tokens',
   );
+  await page.evaluate(() => {
+    const fixture = document.createElement('section');
+    fixture.id = 'semantics-fixture';
+    fixture.style.cssText = 'position:absolute;top:560px;left:20px;background:white;padding:12px;';
+    fixture.innerHTML = `<h3 id="heading-jump">Review heading order</h3>
+      <img id="missing-alt" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3C/svg%3E" width="24" height="24">
+      <img id="decorative-alt" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3C/svg%3E" width="24" height="24">
+      <button id="unnamed-control" style="width:40px;height:28px"></button>
+      <button id="named-control" aria-label="Save" style="width:40px;height:28px"></button>
+      <label>Visible label <input id="labelled-control"></label>
+      <span id="control-label">Reference label</span><input id="referenced-control" aria-labelledby="control-label">
+      <input id="unlabelled-control"><div aria-hidden="true"><button id="hidden-control" style="width:40px;height:28px"></button></div>`;
+    document.body.append(fixture);
+  });
+  await ui.locator('[data-tool="semantics"]').click();
+  await ui.waitForFunction(() =>
+    document.querySelector('#frontend-result').textContent.includes('missing-image-alternative'),
+  );
+  const semantics = await tool('semantics');
+  assert.ok(
+    semantics.issues.some(
+      (i) => i.label === 'img#missing-alt' && i.type === 'missing-image-alternative',
+    ),
+  );
+  assert.ok(
+    semantics.issues.some(
+      (i) => i.label === 'button#unnamed-control' && i.type === 'missing-control-name',
+    ),
+  );
+  assert.ok(
+    semantics.issues.some(
+      (i) => i.label === 'input#unlabelled-control' && i.type === 'missing-control-name',
+    ),
+  );
+  assert.ok(
+    semantics.issues.some(
+      (i) => i.label.includes('heading-jump') && i.type === 'heading-order-review',
+    ),
+  );
+  for (const id of [
+    'decorative-alt',
+    'named-control',
+    'labelled-control',
+    'referenced-control',
+    'hidden-control',
+  ])
+    assert.ok(!semantics.issues.some((i) => i.label.endsWith('#' + id)), id);
+  const reportDownload = ui.waitForEvent('download');
+  await ui.locator('#frontend-result button[data-icon="export"]').click();
+  assert.equal((await reportDownload).suggestedFilename(), 'uiassistant-semantics.json');
+  await page.locator('#semantics-fixture').evaluate((el) => el.remove());
+  console.log(
+    'PASS accessibility basics, valid labels/decorative-image exclusions and JSON report export',
+  );
   await ui.locator('[data-tool="inspect"]').click();
   await page.locator('#sample').click();
   await ui.waitForFunction(() =>
@@ -283,13 +337,186 @@ try {
     fullPage: true,
   });
   await ui.locator('#language-btn').click();
+  await ui.locator('[data-view="workshop"]').click();
+  assert.equal(await ui.locator('#unit-result').textContent(), '1.5rem');
+  await ui.locator('#unit-from').selectOption('rem');
+  await ui.locator('#unit-value').fill('1.5');
+  await ui.locator('#unit-root').fill('20');
+  assert.equal(await ui.locator('#unit-result').textContent(), '30px');
+  await ui.locator('#fluid-minSize').fill('18');
+  await ui.locator('#fluid-maxSize').fill('42');
+  await ui.locator('#fluid-minViewport').fill('360');
+  await ui.locator('#fluid-maxViewport').fill('1440');
+  await ui.locator('#fluid-root').fill('20');
+  await ui.locator('#fluid-preview-width').fill('900');
+  assert.equal(
+    await ui.locator('.fluid-preview').evaluate((el) => parseFloat(el.style.fontSize)),
+    30,
+  );
+  await ui.locator('#fluid-result + button').click();
+  assert.match(
+    await ui.evaluate(() => navigator.clipboard.readText()),
+    /^font-size: clamp\(0.9rem,/,
+  );
+  await ui.locator('#fluid-maxViewport').fill('360');
+  assert.ok(await ui.locator('#fluid-result + button').isDisabled());
+  await ui.locator('#fluid-maxViewport').fill('1440');
+  assert.ok(await ui.locator('#fluid-result + button').isEnabled());
+  await ui.locator('#shadow-inset').check();
+  await ui.locator('#shadow-x').fill('-4');
+  assert.match(await ui.locator('#shadow-result').textContent(), /inset -4px/);
+  await ui.locator('#language-btn').click();
+  await ui.waitForFunction(() =>
+    document.querySelector('#view-title').textContent.includes('کارگاه'),
+  );
+  assert.ok(await ui.locator('#view-workshop').isVisible());
+  await ui.locator('#language-btn').click();
+  assert.ok(await ui.locator('#view-workshop').isVisible());
+  console.log(
+    'PASS CSS workshop calculations, preview, real clipboard, validation and navigation across language changes',
+  );
+  await ui.locator('#toast').waitFor({ state: 'hidden' });
   // Capture the actual popup dimensions as well as the expanded workspace.
+  await ui.locator('[data-view="picker"]').click();
   await ui.evaluate(() => document.body.classList.remove('workspace'));
   await ui.setViewportSize({ width: 790, height: 600 });
   await ui.screenshot({ path: fileURLToPath(new URL('artifacts/picker.png', root)) });
   await ui.locator('[data-view="gradients"]').click();
   await ui.locator('[data-preset="0"]').click();
   await ui.screenshot({ path: fileURLToPath(new URL('artifacts/gradients.png', root)) });
+  const views = ['picker', 'gradients', 'analyzer', 'palettes', 'history', 'frontend', 'workshop'];
+  async function checkLayout(label) {
+    const problems = await ui.evaluate(() => {
+      const main = document.querySelector('main');
+      const issues = [];
+      if (main.scrollWidth > main.clientWidth + 1)
+        issues.push(`main overflow ${main.scrollWidth}/${main.clientWidth}`);
+      if (document.documentElement.scrollWidth > innerWidth + 1) issues.push('document overflow');
+      for (const button of document.querySelectorAll('button')) {
+        if (!button.querySelector('svg'))
+          issues.push('missing icon: ' + (button.id || button.textContent));
+        if (!(button.textContent.trim() || button.getAttribute('aria-label') || button.title))
+          issues.push('missing name: ' + button.outerHTML.slice(0, 100));
+      }
+      const buttons = [...document.querySelectorAll('button')].filter((b) => {
+        const r = b.getBoundingClientRect();
+        return (
+          r.width &&
+          r.height &&
+          b.checkVisibility() &&
+          !b.matches('.stop-handle,.preset-delete') &&
+          r.top >= main.getBoundingClientRect().top &&
+          r.bottom <= main.getBoundingClientRect().bottom
+        );
+      });
+      for (let i = 0; i < buttons.length; i++)
+        for (let j = i + 1; j < buttons.length; j++) {
+          const a = buttons[i].getBoundingClientRect(),
+            b = buttons[j].getBoundingClientRect();
+          if (Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 3) {
+            const gap = Math.max(a.left, b.left) - Math.min(a.right, b.right);
+            if (gap < 4)
+              issues.push(
+                `button gap ${gap.toFixed(1)}: ${buttons[i].id || buttons[i].className}/${buttons[j].id || buttons[j].className}`,
+              );
+          }
+        }
+      return issues;
+    });
+    assert.deepEqual(problems, [], label);
+  }
+  for (const [mode, width, height] of [
+    ['popup', 790, 600],
+    ['wide', 1100, 800],
+    ['compact', 480, 800],
+  ]) {
+    await ui.evaluate(
+      (workspace) => document.body.classList.toggle('workspace', workspace),
+      mode !== 'popup',
+    );
+    await ui.setViewportSize({ width, height });
+    for (const language of ['en', 'fa']) {
+      if ((await ui.locator('html').getAttribute('lang')) !== language)
+        await ui.locator('#language-btn').click();
+      for (const name of views) {
+        await ui.locator(`[data-view="${name}"]`).click();
+        await ui.waitForTimeout(60);
+        await checkLayout(`${mode}/${language}/${name}`);
+        if (name === 'gradients') {
+          assert.ok(
+            await ui
+              .locator('.preset-wrapper')
+              .first()
+              .evaluate(
+                (el) =>
+                  el.querySelector('.preset-card').getBoundingClientRect().width >=
+                  el.getBoundingClientRect().width - 1,
+              ),
+            'preset fills its grid cell',
+          );
+        }
+        await ui.screenshot({
+          path: fileURLToPath(new URL(`artifacts/review-${mode}-${language}-${name}.png`, root)),
+        });
+        const main = ui.locator('main');
+        const scrollHeight = await main.evaluate((el) => el.scrollHeight);
+        const step = await main.evaluate((el) => Math.max(100, el.clientHeight - 60));
+        for (let y = step; y < scrollHeight; y += step) {
+          await main.evaluate((el, y) => {
+            el.scrollTop = y;
+          }, y);
+          await checkLayout(`${mode}/${language}/${name}/scroll-${y}`);
+        }
+        await ui.screenshot({
+          path: fileURLToPath(
+            new URL(`artifacts/review-${mode}-${language}-${name}-bottom.png`, root),
+          ),
+        });
+      }
+      for (const [trigger, dialog] of [
+        ['#settings-btn', '#settings-dialog'],
+        ['#import-gradient', '#import-dialog'],
+        ['#gradient-adjust', '#adjust-dialog'],
+        ['#new-palette', '#name-dialog'],
+      ]) {
+        await ui
+          .locator(`[data-view="${trigger === '#new-palette' ? 'palettes' : 'gradients'}"]`)
+          .click();
+        await ui.locator(trigger).click();
+        const bounds = await ui.locator(dialog).boundingBox();
+        assert.ok(
+          bounds.x >= 0 &&
+            bounds.y >= 0 &&
+            bounds.x + bounds.width <= width + 1 &&
+            bounds.y + bounds.height <= height + 1,
+          `${mode}/${language}/${dialog}`,
+        );
+        assert.ok(
+          await ui.locator(dialog).evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+          `${dialog} content width`,
+        );
+        await ui.screenshot({
+          path: fileURLToPath(
+            new URL(`artifacts/review-${mode}-${language}-${dialog.slice(1)}.png`, root),
+          ),
+        });
+        await ui.locator(`${dialog} .dialog-close`).click();
+      }
+    }
+  }
+  console.log(
+    'PASS every page and dialog in EN/FA at popup, wide and compact sizes: icons, names, button spacing and horizontal overflow',
+  );
+  await ui.locator('[data-view="frontend"]').click();
+  for (const action of ['tokens', 'layout', 'accessibility', 'semantics']) {
+    await ui.locator(`[data-tool="${action}"]`).click();
+    await ui.waitForFunction(
+      () => document.querySelector('#view-frontend [role="status"]').textContent === 'انجام شد',
+    );
+    await ui.locator('#frontend-result').scrollIntoViewIfNeeded();
+    await checkLayout('compact/fa/result-' + action);
+  }
+  assert.match(await ui.locator('#language-btn path').getAttribute('d'), /^M3 5h12/);
   assert.deepEqual(failures, []);
   console.log('PASS English/Persian layouts and no browser runtime errors');
   console.log('Browser integration checks passed. Screenshots saved in artifacts/.');

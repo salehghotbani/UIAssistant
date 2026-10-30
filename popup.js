@@ -1,4 +1,6 @@
 import { initFrontendTools } from './lib/tools-ui.js';
+import { initButtonIcons } from './lib/icons.js';
+import { initWorkshop } from './lib/workshop-ui.js';
 import DOMPurify from './vendor/purify.es.mjs';
 import { api } from './lib/browser.js';
 import {
@@ -129,6 +131,8 @@ function setView(next) {
     const active = el.dataset.view === view;
     el.classList.toggle('active', active);
     el.setAttribute('aria-current', active ? 'page' : 'false');
+    el.setAttribute('aria-label', t(el.dataset.view));
+    el.title = t(el.dataset.view);
   });
   $('#view-title').textContent = t(view);
   $('#view-title').insertAdjacentHTML('beforeend', '<span class="title-dot">.</span>');
@@ -1104,9 +1108,13 @@ initFrontendTools({
   send,
   toast,
   download,
+  navigate: setView,
   getLanguage: () => state.settings.language,
   activate: async () => {
     if (targetTab) await api.tabs.update(targetTab, { active: true });
   },
 });
+initWorkshop({ navigate: setView, copy: safe(copy), getLanguage: () => state.settings.language });
+initButtonIcons();
+setView(view);
 document.documentElement.dataset.ready = 'true';

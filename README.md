@@ -10,21 +10,23 @@
 
 ## Features
 
-| Tool                | Capabilities                                                                                                                                                                            |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Page eyedropper     | Real screenshot pixels, magnifier, 1×1/3×3/5×5/11×11/25×25 sampling, area average, dynamic hover refresh, previous-location resampling.                                                 |
-| Color editor        | H/S/V and R/G/B component planes, alpha and CSS color input. **Every color selection is copied automatically** in the chosen HEX, HEX-alpha, RGB(A), HSL(A) or CSS-variable format.     |
-| Page palettes       | Computed DOM colors and effects, frequency counts, filtering, element location and saved page palettes.                                                                                 |
-| Library and history | Seven built-in palettes, custom collections, JSON/GIMP GPL import, JSON/CSS export and 200 unique recent colors.                                                                        |
-| Gradients           | Linear/radial/conic and repeating gradients; independent color/opacity stops; presets; hue/saturation/lightness adjustments; CSS/image import; CSS/SCSS, PNG and supported SVG exports. |
-| Element inspector   | Dimensions, margin/padding, border, radius, shadow and copyable CSS.                                                                                                                    |
-| Typography          | Computed font family, size, weight, style, line height, letter spacing and alignment.                                                                                                   |
-| Spacing ruler       | Select two elements for horizontal/vertical gaps and coordinate offsets in CSS pixels.                                                                                                  |
-| Layout audit        | Locate horizontal overflow, clipped content and truncated text.                                                                                                                         |
-| Contrast audit      | Text against composited flat ancestor backgrounds; AA-oriented foreground suggestions; manual-review flags for complex cases.                                                           |
-| Design tokens       | Extract color, typography, spacing, radius and shadow values/frequencies; export CSS variables or JSON.                                                                                 |
-| Reference overlay   | Local PNG/JPEG/WebP image, adjustable opacity, coordinates, width and dragging.                                                                                                         |
-| RTL/LTR preview     | Temporary direction changes with layout checks and exact direction/style restoration.                                                                                                   |
+| Tool                 | Capabilities                                                                                                                                                                            |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page eyedropper      | Real screenshot pixels, magnifier, 1×1/3×3/5×5/11×11/25×25 sampling, area average, dynamic hover refresh, previous-location resampling.                                                 |
+| Color editor         | H/S/V and R/G/B component planes, alpha and CSS color input. **Every color selection is copied automatically** in the chosen HEX, HEX-alpha, RGB(A), HSL(A) or CSS-variable format.     |
+| Page palettes        | Computed DOM colors and effects, frequency counts, filtering, element location and saved page palettes.                                                                                 |
+| Library and history  | Seven built-in palettes, custom collections, JSON/GIMP GPL import, JSON/CSS export and 200 unique recent colors.                                                                        |
+| Gradients            | Linear/radial/conic and repeating gradients; independent color/opacity stops; presets; hue/saturation/lightness adjustments; CSS/image import; CSS/SCSS, PNG and supported SVG exports. |
+| Element inspector    | Dimensions, margin/padding, border, radius, shadow and copyable CSS.                                                                                                                    |
+| Typography           | Computed font family, size, weight, style, line height, letter spacing and alignment.                                                                                                   |
+| Spacing ruler        | Select two elements for horizontal/vertical gaps and coordinate offsets in CSS pixels.                                                                                                  |
+| Layout audit         | Locate horizontal overflow, clipped content and truncated text.                                                                                                                         |
+| Contrast audit       | Text against composited flat ancestor backgrounds; AA-oriented foreground suggestions; manual-review flags for complex cases.                                                           |
+| Design tokens        | Extract color, typography, spacing, radius and shadow values/frequencies; export CSS variables or JSON.                                                                                 |
+| Reference overlay    | Local PNG/JPEG/WebP image, adjustable opacity, coordinates, width and dragging.                                                                                                         |
+| Accessibility basics | Preliminary checks for missing image alternatives, unnamed controls, page language and heading-order review; downloadable JSON reports.                                                 |
+| CSS workshop         | px/rem converter with custom root, fluid `clamp()` generator with viewport preview and box-shadow builder with inset/alpha and copyable CSS.                                            |
+| RTL/LTR preview      | Temporary direction changes with layout checks and exact direction/style restoration.                                                                                                   |
 
 English and Persian interfaces, RTL layout, compact popup and expanded workspace are included. Use **فا / EN** to switch languages.
 
@@ -37,6 +39,10 @@ English and Persian interfaces, RTL layout, compact popup and expanded workspace
 ### Gradient editor
 
 ![Editable gradient with color and opacity stops](docs/images/gradients.png)
+
+### CSS workshop
+
+![CSS workshop with unit converter, fluid sizing and shadow builder](docs/images/css-workshop.png)
 
 ### Persian workspace
 
@@ -81,6 +87,8 @@ Replace the extracted files, reload the extension and reload inspected pages to 
 - **Inspect:** Frontend tools → Element inspector or Typography → select an element. Copy CSS from the page panel or workspace.
 - **Measure:** Spacing ruler → select two elements. Read gaps and coordinate differences.
 - **Audit/export:** Layout audit, Contrast audit or Design tokens → locate findings or download CSS/JSON.
+- **Build CSS:** CSS workshop → convert px/rem, generate a fluid size between two viewport widths, or tune a box shadow; copy the result. Root size is a user-provided assumption, not a change to the target page.
+- **Review accessibility basics:** Scan for missing alternatives, control names and heading jumps. Locate each finding or export JSON. These heuristics need human review; decorative `alt=""` images and labelled controls are accepted.
 - **Compare:** Choose a local reference image, adjust its opacity/position/width and enable dragging if needed. The image is fixed relative to the viewport.
 - **Undo:** Restore page removes tool layers and restores the original direction and inline priority. Reload also clears temporary changes. Esc closes selection/reference overlays.
 
@@ -127,10 +135,11 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, testing, translation a
 
 ## Validation and limits
 
-- There are 20 unit/compatibility tests and an Edge integration suite covering color tools and all eight frontend tools. Firefox passes `web-ext` validation; actual Firefox execution has **not** been tested in this environment. Native screen selection and shortcut assignment require manual testing.
+- There are 24 unit/compatibility tests and an Edge integration suite covering the color tools, nine frontend tools, CSS workshop, real clipboard, report export, and every page/dialog in English and Persian at 790×600, 1100×800 and 480×800. Scrolling checks catch lower-page overflow and button spacing too. Firefox passes `web-ext` validation; actual Firefox execution has **not** been tested in this environment. Native screen selection and shortcut assignment require manual testing.
 - The headless harness grants all-sites and clipboard-read only to an isolated **test copy**. Neither grant enters a release. Unmodified third-party `vendor/` code is excluded from heuristic Mozilla scanning.
 - Protected browser/store pages may reject injection; `file://` needs browser-granted file access. Page-color scans cap at 30,000 elements. Frontend scans cap at 10,000 and show up to 1,000 findings. Closed shadow roots and cross-origin frame DOM are inaccessible; frontend audits do not traverse iframes.
 - Typography reports computed CSS, not the actual font file used for each glyph. Contrast is not a complete WCAG audit: images, gradients, opacity/filter/blending, uncertain canvas backgrounds, sibling occlusion and image text need visual review. Intentional overflow may be reported.
+- Accessibility basics uses preliminary DOM/name heuristics, not the complete accessible-name algorithm or a WCAG conformance verdict. Hidden content and frames are excluded. Heading jumps are review hints. See [WAI preliminary checks](https://www.w3.org/WAI/test-evaluate/preliminary/) and [form labels](https://www.w3.org/WAI/tutorials/forms/labels/). Fluid type uses [CSS clamp](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/clamp) with rem + vw; test text zoom in the destination page.
 - RTL/LTR previews do not prove semantic alignment or reading order. Measurements use axis-aligned bounding rectangles. Resampling needs the same page, scroll, viewport and zoom.
 - Gradients support up to 64 color and 64 opacity stops; image extraction is approximate and generates at most 32 stops. CSS import supports percentage stops and supported centered geometry. SVG export supports non-repeating linear/radial gradients; PNG/CSS cover other types. Local gradient links belong to the same extension installation. Obsolete Flash, IE6–8 and Compass-specific outputs are not implemented.
 - Reference uploads accept PNG/JPEG/WebP up to 12 MB and are decoded at a maximum dimension of 2,048 pixels. They are not uploaded or saved in history.

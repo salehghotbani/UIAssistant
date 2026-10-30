@@ -23,18 +23,20 @@ Use Node.js 20+; Node.js 24 is tested. Load `dist/UIAssistant` in Chrome/Edge, o
 
 ## Architecture
 
-| Path                                         | Responsibility                                                     |
-| -------------------------------------------- | ------------------------------------------------------------------ |
-| `background.js`                              | Tab routing, capture queue, storage and clipboard coordination     |
-| `content.js`                                 | Screenshot sampler and overlay lifecycle                           |
-| `popup.*`, `styles.css`                      | Main workspace and color interface                                 |
-| `lib/browser.js`, `lib/clipboard.js`         | Firefox/Chromium API and clipboard adapters                        |
-| `lib/page-tools.js`, `lib/tools-ui.js`       | Injected frontend tools and their interface                        |
-| `lib/color.js`, `lib/gradient*.js`           | Color math, parsing and export                                     |
-| `lib/i18n.js`                                | Main translations; frontend strings also live in `lib/tools-ui.js` |
-| `scripts/manifests.mjs`, `scripts/build.mjs` | Browser manifests and ZIP packaging                                |
-| `tests/`                                     | Unit, compatibility and browser tests                              |
-| `vendor/`                                    | Unmodified DOMPurify distributions and license                     |
+| Path                                         | Responsibility                                                             |
+| -------------------------------------------- | -------------------------------------------------------------------------- |
+| `background.js`                              | Tab routing, capture queue, storage and clipboard coordination             |
+| `content.js`                                 | Screenshot sampler and overlay lifecycle                                   |
+| `popup.*`, `styles.css`                      | Main workspace and color interface                                         |
+| `lib/browser.js`, `lib/clipboard.js`         | Firefox/Chromium API and clipboard adapters                                |
+| `lib/page-tools.js`, `lib/tools-ui.js`       | Injected frontend tools and their interface                                |
+| `lib/css-tools.js`, `lib/workshop-ui.js`     | CPU-based CSS calculations and bilingual workshop                          |
+| `lib/icons.js`                               | Local SVG icons and coverage of dynamically rendered buttons               |
+| `lib/color.js`, `lib/gradient*.js`           | Color math, parsing and export                                             |
+| `lib/i18n.js`                                | Main translations; frontend/workshop strings also live in their UI modules |
+| `scripts/manifests.mjs`, `scripts/build.mjs` | Browser manifests and ZIP packaging                                        |
+| `tests/`                                     | Unit, compatibility and browser tests                                      |
+| `vendor/`                                    | Unmodified DOMPurify distributions and license                             |
 
 Injected `pageAnalyzer` and `pageTools` functions are serialized by the browser. Keep them self-contained: imported closures are unavailable in the target page.
 

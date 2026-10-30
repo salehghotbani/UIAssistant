@@ -4,10 +4,11 @@ Actual UIAssistant captures from `tests/browser.mjs`, using an isolated headless
 
 | File                 | Content                                                |
 | -------------------- | ------------------------------------------------------ |
-| `color-picker.png`   | English compact color workspace                        |
+| `color-picker.png`   | English expanded color workspace                       |
 | `gradients.png`      | Gradient editor                                        |
 | `frontend-tools.png` | Frontend tools, reference/RTL controls and measurement |
 | `workspace-fa.png`   | Persian expanded workspace                             |
+| `css-workshop.png`   | English CSS workshop: unit converter and fluid sizing  |
 
 Regenerate with `npm run test:browser`, inspect `artifacts/`, then copy intended captures here. Screenshots use the project's [MIT license](../../LICENSE).
 

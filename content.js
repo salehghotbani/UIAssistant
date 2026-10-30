@@ -176,8 +176,17 @@
     label.textContent = text;
     const button = document.createElement('button');
     button.textContent = fa ? 'باز کردن UIAssistant' : 'Open UIAssistant';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.style.cssText =
+      'width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;flex-shrink:0;';
+    const path = document.createElementNS(svg.namespaceURI, 'path');
+    path.setAttribute('d', 'M14 3h7v7m0-7-9 9M10 3H3v18h18v-7');
+    svg.append(path);
+    button.prepend(svg);
     button.style.cssText =
-      'border:0;border-radius:6px;background:#a78bfa;color:#171420;padding:7px 10px;cursor:pointer;font:inherit';
+      'display:inline-flex;align-items:center;gap:7px;border:0;border-radius:6px;background:#a78bfa;color:#171420;padding:7px 10px;cursor:pointer;font:inherit;flex-shrink:0';
     button.onclick = () => {
       send({ type: 'OPEN_WORKSPACE' }).catch(() => {});
       host.remove();
