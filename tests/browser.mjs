@@ -95,6 +95,7 @@ try {
   diagnosticUI = ui;
   await ui.goto(`chrome-extension://${extensionId}/popup.html?tab=${tabId}`);
   await ui.waitForFunction(() => document.documentElement.dataset.ready === 'true');
+  await ui.waitForFunction(() => document.querySelector('.brand-mark').naturalWidth > 0);
   async function toggleLanguage() {
     const previous = await ui.locator('html').getAttribute('lang');
     await ui.locator('#language-btn').click();
@@ -334,7 +335,7 @@ try {
   await ui.waitForFunction(
     () => document.querySelector('#view-frontend [role="status"]').textContent === 'Done',
   );
-  assert.ok(await page.locator('[data-uiassistant-tool]').count());
+  assert.ok(await page.locator('[data-uiassistant-tool]:not([data-uia-preview-notice])').count());
   await tool('reference', { x: 40, y: 25, opacity: 0.25, width: 500 });
   await tool('direction', { direction: 'rtl' });
   assert.equal(await page.locator('html').getAttribute('dir'), 'rtl');
@@ -344,7 +345,10 @@ try {
     await page.evaluate(() => document.documentElement.style.getPropertyPriority('direction')),
     'important',
   );
-  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  assert.equal(
+    await page.locator('[data-uiassistant-tool]:not([data-uia-preview-notice])').count(),
+    0,
+  );
   console.log(
     'PASS local reference image, adjustable overlay, RTL preview and exact page restoration',
   );
@@ -372,6 +376,10 @@ try {
     { type: 'CAPTURE' },
     { type: 'CAPTURE', token: 'forged' },
     { type: 'SCREENSHOT_PREPARE', tabId },
+    { type: 'SCREENSHOT_START', tabId, ticket: 'forged' },
+    { type: 'SCREENSHOT_STATUS', tabId },
+    { type: 'SCREENSHOT_PREVIEW', tabId, jobId: 'forged' },
+    { type: 'SCREENSHOT_DISCARD', tabId },
     { type: 'START_PICK', tabId },
     { type: 'TOOL_COPY', text: 'unauthorized clipboard' },
   ]) {
@@ -542,7 +550,9 @@ try {
   await worker.evaluate((id) => chrome.tabs.setZoom(id, 1.25), tabId);
   const beforeRegion = await countCaptures();
   await prepareScreenshot('region');
-  await page.locator('[data-uiassistant-tool]').waitFor({ state: 'attached' });
+  await page
+    .locator('[data-uiassistant-tool]:not([data-uia-preview-notice])')
+    .waitFor({ state: 'attached' });
   await page.evaluate(() =>
     window.dispatchEvent(
       new PointerEvent('pointerup', { bubbles: true, clientX: 184, clientY: 192, button: 0 }),
@@ -561,16 +571,24 @@ try {
   assert.deepEqual(await screenshotPixel(75, 50), [214, 30, 60, 255]);
   await ui.locator('#toast').waitFor({ state: 'hidden' });
   await ui.screenshot({ path: fileURLToPath(new URL('artifacts/region-capture.png', root)) });
-  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  assert.equal(
+    await page.locator('[data-uiassistant-tool]:not([data-uia-preview-notice])').count(),
+    0,
+  );
   await prepareScreenshot('region');
-  await page.locator('[data-uiassistant-tool]').waitFor({ state: 'attached' });
+  await page
+    .locator('[data-uiassistant-tool]:not([data-uia-preview-notice])')
+    .waitFor({ state: 'attached' });
   const beforeCancelRegion = await countCaptures();
   await page.keyboard.press('Escape');
   await ui.waitForFunction(() =>
     document.querySelector('#screenshot-status').textContent.includes('cancelled'),
   );
   assert.equal(await countCaptures(), beforeCancelRegion);
-  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  assert.equal(
+    await page.locator('[data-uiassistant-tool]:not([data-uia-preview-notice])').count(),
+    0,
+  );
   await worker.evaluate((id) => chrome.tabs.setZoom(id, 1), tabId);
   await page.locator('#region-fixture').evaluate((el) => el.remove());
   console.log(
@@ -628,9 +646,14 @@ try {
     ]),
     originalStyles,
   );
-  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  assert.equal(
+    await page.locator('[data-uiassistant-tool]:not([data-uia-preview-notice])').count(),
+    0,
+  );
   await prepareScreenshot('full');
-  await page.locator('[data-uiassistant-tool]').waitFor({ state: 'attached' });
+  await page
+    .locator('[data-uiassistant-tool]:not([data-uia-preview-notice])')
+    .waitFor({ state: 'attached' });
   await page.keyboard.press('Escape');
   await ui.waitForFunction(() =>
     document.querySelector('#screenshot-status').textContent.includes('cancelled'),
@@ -644,7 +667,10 @@ try {
     ]),
     originalStyles,
   );
-  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  assert.equal(
+    await page.locator('[data-uiassistant-tool]:not([data-uia-preview-notice])').count(),
+    0,
+  );
   await page.evaluate(() => (document.body.style.height = '40000px'));
   const beforeLarge = await countCaptures();
   await prepareScreenshot('full');
@@ -653,14 +679,19 @@ try {
   );
   assert.equal(await countCaptures(), beforeLarge);
   assert.deepEqual(await page.evaluate(() => [scrollX, scrollY]), originalScroll);
-  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  assert.equal(
+    await page.locator('[data-uiassistant-tool]:not([data-uia-preview-notice])').count(),
+    0,
+  );
   assert.equal(
     await page.evaluate(() => document.documentElement.getAttribute('style')),
     originalStyles[0],
   );
   await page.evaluate(() => (document.body.style.height = '1900px'));
   await prepareScreenshot('full');
-  await page.locator('[data-uiassistant-tool]').waitFor({ state: 'attached' });
+  await page
+    .locator('[data-uiassistant-tool]:not([data-uia-preview-notice])')
+    .waitFor({ state: 'attached' });
   await ui.bringToFront();
   await ui.waitForFunction(
     () =>
@@ -668,7 +699,10 @@ try {
       document.querySelector('#screenshot-status').textContent.includes('cancelled'),
   );
   assert.deepEqual(await page.evaluate(() => [scrollX, scrollY]), originalScroll);
-  assert.equal(await page.locator('[data-uiassistant-tool]').count(), 0);
+  assert.equal(
+    await page.locator('[data-uiassistant-tool]:not([data-uia-preview-notice])').count(),
+    0,
+  );
   assert.deepEqual(
     await page.evaluate(() => [
       document.documentElement.getAttribute('style'),
@@ -679,6 +713,173 @@ try {
   );
   console.log(
     'PASS oversized-page rejection before capture and inactive-tab abort with restoration',
+  );
+  await ui.evaluate(
+    async (tabId) => chrome.runtime.sendMessage({ type: 'SCREENSHOT_DISCARD', tabId }),
+    tabId,
+  );
+  await page.evaluate(() => {
+    document.body.replaceChildren();
+    document.body.style.cssText = 'margin:0;width:100%;height:1500px;background:#edf0f6';
+    const outer = document.createElement('div');
+    outer.id = 'outer-scroll';
+    outer.style.cssText =
+      'position:absolute;left:60px;top:120px;width:650px;height:380px;overflow:auto;border:6px solid #333;padding:0;background:white';
+    const outerContent = document.createElement('div');
+    outerContent.style.cssText = 'position:relative;width:1000px;height:900px';
+    const inner = document.createElement('div');
+    inner.id = 'inner-scroll';
+    inner.style.cssText =
+      'position:absolute;left:180px;top:160px;width:360px;height:220px;overflow:auto;border:4px solid #555;padding:0;background:white';
+    const content = document.createElement('div');
+    content.style.cssText = 'position:relative;width:600px;height:480px';
+    const colors = ['#ff4d6d', '#22c55e', '#3b82f6', '#fbbf24'];
+    for (let row = 0; row < 2; row++)
+      for (let col = 0; col < 2; col++) {
+        const cell = document.createElement('div');
+        cell.style.cssText = `position:absolute;left:${col * 300}px;top:${row * 240}px;width:300px;height:240px;background:${colors[row * 2 + col]}`;
+        content.append(cell);
+      }
+    inner.append(content);
+    outerContent.append(inner);
+    outer.append(outerContent);
+    document.body.append(outer);
+    outer.scrollTo(90, 75);
+    inner.scrollTo(30, 40);
+    window.scrollTo({ left: 0, top: 90, behavior: 'instant' });
+  });
+  const nestedBefore = await page.evaluate(() => [
+    scrollX,
+    scrollY,
+    ...['outer-scroll', 'inner-scroll'].flatMap((id) => {
+      const e = document.getElementById(id);
+      return [e.scrollLeft, e.scrollTop, e.getAttribute('style')];
+    }),
+    document.documentElement.getAttribute('style'),
+    document.body.getAttribute('style'),
+  ]);
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html?tab=${tabId}`);
+  await popup.waitForFunction(() => document.documentElement.dataset.ready === 'true');
+  await popup.evaluate(() => document.body.classList.remove('workspace'));
+  await popup.locator('[data-view="screenshots"]').click();
+  await popup.locator('#screenshot-mode').selectOption('container');
+  const pageCount = context.pages().length;
+  await popup.locator('#screenshot-prepare').click();
+  await popup.locator('.screenshot-consent').waitFor({ state: 'visible' });
+  await popup.locator('#screenshot-capture').click();
+  await page
+    .locator('[data-uiassistant-tool]:not([data-uia-preview-notice])')
+    .waitFor({ state: 'attached' });
+  assert.equal(
+    context.pages().length,
+    pageCount,
+    'capture must not force an expanded workspace tab',
+  );
+  await popup.close();
+  const panelBounds = await page.locator('#inner-scroll').boundingBox();
+  await page.mouse.move(panelBounds.x + 80, panelBounds.y + 60);
+  await page.mouse.click(panelBounds.x + 80, panelBounds.y + 60);
+  let nestedStatus;
+  for (let attempt = 0; attempt < 120; attempt++) {
+    nestedStatus = await ui.evaluate(
+      async (tabId) => chrome.runtime.sendMessage({ type: 'SCREENSHOT_STATUS', tabId }),
+      tabId,
+    );
+    if (nestedStatus.status === 'ready' || nestedStatus.status === 'error') break;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  assert.equal(nestedStatus.status, 'ready', nestedStatus.error);
+  const reopened = await context.newPage();
+  await reopened.goto(`chrome-extension://${extensionId}/popup.html?tab=${tabId}`);
+  await reopened.waitForFunction(() => document.documentElement.dataset.ready === 'true');
+  await reopened.evaluate(() => document.body.classList.remove('workspace'));
+  await reopened.setViewportSize({ width: 790, height: 600 });
+  assert.ok(await reopened.locator('#view-screenshots').isVisible());
+  assert.equal(await reopened.locator('#screenshot-mode').inputValue(), 'container');
+  assert.deepEqual(
+    await reopened
+      .locator('#screenshot-image')
+      .evaluate((img) => [img.naturalWidth, img.naturalHeight]),
+    [600, 480],
+  );
+  for (const [x, y, rgb] of [
+    [30, 30, [255, 77, 109]],
+    [570, 30, [34, 197, 94]],
+    [30, 450, [59, 130, 246]],
+    [570, 450, [251, 191, 36]],
+  ])
+    assert.deepEqual(
+      await reopened.locator('#screenshot-image').evaluate(
+        (img, { x, y }) => {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth;
+          c.height = img.naturalHeight;
+          const ctx = c.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          return [...ctx.getImageData(x, y, 1, 1).data].slice(0, 3);
+        },
+        { x, y },
+      ),
+      rgb,
+      `nested pixel ${x},${y}`,
+    );
+  assert.deepEqual(
+    await page.evaluate(() => [
+      scrollX,
+      scrollY,
+      ...['outer-scroll', 'inner-scroll'].flatMap((id) => {
+        const e = document.getElementById(id);
+        return [e.scrollLeft, e.scrollTop, e.getAttribute('style')];
+      }),
+      document.documentElement.getAttribute('style'),
+      document.body.getAttribute('style'),
+    ]),
+    nestedBefore,
+  );
+  const nestedDownload = reopened.waitForEvent('download');
+  await reopened.locator('#screenshot-save-png').click();
+  assert.match((await nestedDownload).suggestedFilename(), /\.png$/);
+  await reopened.screenshot({
+    path: fileURLToPath(new URL('artifacts/container-popup.png', root)),
+  });
+  await reopened.locator('#screenshot-clear').click();
+  assert.ok(await reopened.locator('#screenshot-image').isHidden());
+  assert.equal(
+    (
+      await reopened.evaluate(
+        async ({ tabId, jobId }) =>
+          chrome.runtime.sendMessage({ type: 'SCREENSHOT_PREVIEW', tabId, jobId }),
+        { tabId, jobId: nestedStatus.jobId },
+      )
+    ).ok,
+    false,
+  );
+  await reopened.close();
+  await ui.setViewportSize({ width: 1100, height: 800 });
+  await prepareScreenshot('container');
+  await page
+    .locator('[data-uiassistant-tool]:not([data-uia-preview-notice])')
+    .waitFor({ state: 'attached' });
+  await page.keyboard.press('Escape');
+  await ui.waitForFunction(() =>
+    document.querySelector('#screenshot-status').textContent.includes('cancelled'),
+  );
+  assert.deepEqual(
+    await page.evaluate(() => [
+      scrollX,
+      scrollY,
+      ...['outer-scroll', 'inner-scroll'].flatMap((id) => {
+        const e = document.getElementById(id);
+        return [e.scrollLeft, e.scrollTop, e.getAttribute('style')];
+      }),
+      document.documentElement.getAttribute('style'),
+      document.body.getAttribute('style'),
+    ]),
+    nestedBefore,
+  );
+  console.log(
+    'PASS nested scroll capture, popup close/reopen recovery, no forced tab, actual crop pixels, exact restoration and preview deletion',
   );
   await page.reload();
   await ui.locator('#screenshot-mode').selectOption('viewport');

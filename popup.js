@@ -1117,7 +1117,7 @@ initFrontendTools({
   },
 });
 initWorkshop({ navigate: setView, copy: safe(copy), getLanguage: () => state.settings.language });
-initScreenshots({
+await initScreenshots({
   navigate: setView,
   send,
   download,

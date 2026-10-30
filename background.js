@@ -5,6 +5,9 @@ import { readStore, writeStore } from './lib/store.js';
 import { pageAnalyzer } from './lib/analyzer.js';
 import { pageTools } from './lib/page-tools.js';
 import { captureScreenshot } from './lib/screenshot-capture.js';
+import { createPreviewJobs, holdPreview } from './lib/preview-jobs.js';
+import { capturePage } from './lib/capture-page.js';
+import { captureContainerPage } from './lib/capture-container.js';
 import {
   assertMessage,
   isWorkspaceSender,
@@ -30,6 +33,44 @@ const securityReady = (async () => {
 securityReady.catch(() => {});
 let storeQueue = Promise.resolve();
 const screenshotJobs = new Map();
+const previews = createPreviewJobs({
+  onRemove: (tabId) => api.action.setBadgeText({ tabId, text: '' }).catch(() => {}),
+});
+async function performScreenshot(identity, job) {
+  const tabId = identity.tabId;
+  screenshotJobs.set(tabId, job);
+  job.operationId = crypto.randomUUID();
+  try {
+    await verifyDocument(identity);
+    await api.scripting.executeScript({
+      target: { tabId },
+      func: pageTools,
+      args: ['capture-cleanup'],
+    });
+    await api.scripting.executeScript({ target: { tabId }, func: pageAnalyzer, args: ['clear'] });
+    await api.tabs.sendMessage(tabId, { type: 'UIA_HIDE' }, { frameId: 0 });
+    await new Promise((r) => setTimeout(r, 80));
+    if (job.cancelled) throw Error('Screenshot cancelled.');
+    const image =
+      identity.mode === 'viewport'
+        ? await capture(identity)
+        : await captureScreenshot({
+            identity,
+            mode: identity.mode,
+            hideFixed: identity.hideFixed,
+            language: identity.language,
+            api,
+            capture,
+            verify: verifyDocument,
+            isOwnerAlive: async () => !job.cancelled,
+            operationId: job.operationId,
+          });
+    if (job.cancelled) throw Error('Screenshot cancelled.');
+    return { image, capturedAt: Date.now() };
+  } finally {
+    if (screenshotJobs.get(tabId) === job) screenshotJobs.delete(tabId);
+  }
+}
 function serialized(fn) {
   const task = storeQueue.then(fn);
   storeQueue = task.catch(() => {});
@@ -165,7 +206,8 @@ async function handle(message, sender) {
     case 'SCREENSHOT_PREPARE': {
       if (screenshotJobs.has(tabId)) throw Error('A screenshot is already running in this tab.');
       const mode = message.mode || 'viewport';
-      if (!['viewport', 'full', 'region'].includes(mode)) throw Error('Invalid screenshot mode.');
+      if (!['viewport', 'full', 'region', 'container'].includes(mode))
+        throw Error('Invalid screenshot mode.');
       const identity = await pageReady(tabId);
       const ticket = await grants.issue('screenshot', identity, 30000, {
         owner: ownerKey(sender),
@@ -175,6 +217,7 @@ async function handle(message, sender) {
       });
       return { ticket, title: identity.title || '', url: identity.url };
     }
+    case 'SCREENSHOT_START':
     case 'SCREENSHOT_CAPTURE': {
       if (screenshotJobs.has(tabId)) throw Error('A screenshot is already running in this tab.');
       const identity = await grants.use(
@@ -183,39 +226,60 @@ async function handle(message, sender) {
         (g) => g.owner === ownerKey(sender) && g.tabId === tabId,
         true,
       );
-      const job = { ownerTab: sender.tab?.id, cancelled: false };
-      screenshotJobs.set(tabId, job);
+      if (message.type === 'SCREENSHOT_CAPTURE')
+        return performScreenshot(identity, { cancelled: false });
+      const job = previews.create(identity);
       try {
-        await verifyDocument(identity);
         await api.scripting.executeScript({
-          target: { tabId },
-          func: pageTools,
-          args: ['capture-cleanup'],
+          target: { tabId, frameIds: [0] },
+          func: holdPreview,
+          args: [{ token: job.holdToken, expires: job.expires, language: identity.language }],
         });
-        await api.scripting.executeScript({
-          target: { tabId },
-          func: pageAnalyzer,
-          args: ['clear'],
-        });
-        await api.tabs.sendMessage(tabId, { type: 'UIA_HIDE' }, { frameId: 0 });
-        await new Promise((r) => setTimeout(r, 80));
-        const image =
-          identity.mode === 'viewport'
-            ? await capture(identity)
-            : await captureScreenshot({
-                identity,
-                mode: identity.mode,
-                hideFixed: identity.hideFixed,
-                language: identity.language,
-                api,
-                capture,
-                verify: verifyDocument,
-                isOwnerAlive: async () => !job.cancelled,
-              });
-        return { image, capturedAt: Date.now() };
-      } finally {
-        screenshotJobs.delete(tabId);
+      } catch (error) {
+        previews.remove(tabId);
+        throw error;
       }
+      job.done = performScreenshot(identity, job)
+        .then((result) => {
+          if (previews.get(tabId) !== job || job.cancelled) return;
+          job.image = result.image;
+          job.capturedAt = result.capturedAt;
+          job.status = 'ready';
+          api.action.setBadgeText({ tabId, text: '✓' }).catch(() => {});
+          try {
+            job.port?.postMessage({ status: 'ready' });
+          } catch {}
+        })
+        .catch((error) => {
+          if (previews.get(tabId) !== job) return;
+          job.error = error.message;
+          job.status = 'error';
+          api.action.setBadgeText({ tabId, text: '!' }).catch(() => {});
+        });
+      return previews.describe(tabId);
+    }
+    case 'SCREENSHOT_STATUS':
+      return previews.describe(tabId);
+    case 'SCREENSHOT_PREVIEW':
+      await api.action.setBadgeText({ tabId, text: '' });
+      return previews.image(tabId, message.jobId);
+    case 'SCREENSHOT_DISCARD': {
+      const job = previews.get(tabId);
+      if (job && message.jobId && job.id !== message.jobId)
+        throw Error('The preview changed. Reopen the popup.');
+      previews.remove(tabId);
+      if (job?.operationId && job.status === 'running') {
+        try {
+          await verifyDocument(job);
+          await api.scripting.executeScript({
+            target: { tabId, frameIds: [0] },
+            func: job.mode === 'container' ? captureContainerPage : capturePage,
+            args: ['cancel', { id: job.operationId }],
+          });
+          await Promise.race([job.done, new Promise((resolve) => setTimeout(resolve, 700))]);
+        } catch {}
+      }
+      return {};
     }
     case 'SCREENSHOT_CANCEL':
       await grants.use(message.ticket, 'screenshot', (g) => g.owner === ownerKey(sender), true);
@@ -386,9 +450,48 @@ api.runtime.onInstalled.addListener(async () => {
 });
 api.tabs.onRemoved.addListener((tabId) => {
   grants.revokeTab(tabId).catch(() => {});
-  for (const [target, job] of screenshotJobs)
-    if (target === tabId || job.ownerTab === tabId) job.cancelled = true;
+  previews.remove(tabId);
+  const job = screenshotJobs.get(tabId);
+  if (job) job.cancelled = true;
 });
 api.tabs.onUpdated.addListener((tabId, change) => {
-  if (change.status === 'loading' || change.url) grants.revokeTab(tabId).catch(() => {});
+  if (change.status === 'loading' || change.url) {
+    grants.revokeTab(tabId).catch(() => {});
+    previews.remove(tabId);
+    const job = screenshotJobs.get(tabId);
+    if (job) job.cancelled = true;
+  }
+});
+api.runtime.onConnect.addListener((port) => {
+  if (port.name !== 'uia-preview-hold' || !isPageSender(port.sender, api.runtime)) {
+    port.disconnect();
+    return;
+  }
+  let attached = null;
+  const timer = setTimeout(() => {
+    if (!attached) port.disconnect();
+  }, 2000);
+  port.onMessage.addListener((message) => {
+    const job = typeof message?.token === 'string' ? previews.find(message.token) : null;
+    if (
+      !job ||
+      !matchesPage(job, port.sender) ||
+      (attached && attached !== job) ||
+      (job.port && job.port !== port)
+    ) {
+      port.disconnect();
+      return;
+    }
+    attached = job;
+    job.port = port;
+    clearTimeout(timer);
+    port.postMessage({ status: job.status, expires: job.expires });
+  });
+  port.onDisconnect.addListener(() => {
+    clearTimeout(timer);
+    if (attached?.port === port) {
+      attached.port = null;
+      if (previews.get(attached.tabId) === attached) previews.remove(attached.tabId);
+    }
+  });
 });

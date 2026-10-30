@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "UIAssistant",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Local frontend tools: colors, screenshots, CSS workshop, style inspector, spacing ruler and accessibility checks.",
   "minimum_chrome_version": "116",
   "permissions": ["activeTab", "scripting", "storage", "offscreen", "clipboardWrite"],
