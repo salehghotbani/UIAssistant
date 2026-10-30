@@ -32,4 +32,31 @@ async function check(dir) {
 await check('');
 if (manifest.host_permissions || manifest.content_scripts)
   throw new Error('Do not add persistent site access without documenting it.');
+if (
+  manifest.externally_connectable?.ids?.length !== 0 ||
+  manifest.externally_connectable?.matches?.length !== 0
+)
+  throw new Error('External connections must remain explicitly disabled.');
+if (
+  manifest.web_accessible_resources ||
+  manifest.permissions.some((p) =>
+    [
+      'nativeMessaging',
+      'debugger',
+      'desktopCapture',
+      'tabCapture',
+      'downloads',
+      'clipboardRead',
+    ].includes(p),
+  )
+)
+  throw new Error('Unexpected privileged capture, native bridge or exported resources.');
+for (const directive of [
+  "connect-src 'none'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "base-uri 'none'",
+])
+  if (!manifest.content_security_policy.extension_pages.includes(directive))
+    throw new Error('Missing security policy: ' + directive);
 console.log('Manifest, bundled files and JavaScript syntax verified.');

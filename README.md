@@ -4,7 +4,7 @@
 
 **English** · [فارسی](README.fa.md)
 
-[Latest release](https://github.com/salehghotbani/UIAssistant/releases/latest) · [Contributing](CONTRIBUTING.md) · [Privacy](PRIVACY.md) · [MIT License](LICENSE)
+[Latest release](https://github.com/salehghotbani/UIAssistant/releases/latest) · [Contributing](CONTRIBUTING.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [MIT License](LICENSE)
 
 ![Color picker with spectrum, RGB/HSV controls and history](docs/images/color-picker.png)
 
@@ -26,6 +26,7 @@
 | Reference overlay    | Local PNG/JPEG/WebP image, adjustable opacity, coordinates, width and dragging.                                                                                                         |
 | Accessibility basics | Preliminary checks for missing image alternatives, unnamed controls, page language and heading-order review; downloadable JSON reports.                                                 |
 | CSS workshop         | px/rem converter with custom root, fluid `clamp()` generator with viewport preview and box-shadow builder with inset/alpha and copyable CSS.                                            |
+| Screenshots          | Visible-area capture with target confirmation, local preview, manual PNG/JPEG export and preview deletion. No upload or screenshot history.                                             |
 | RTL/LTR preview      | Temporary direction changes with layout checks and exact direction/style restoration.                                                                                                   |
 
 English and Persian interfaces, RTL layout, compact popup and expanded workspace are included. Use **فا / EN** to switch languages.
@@ -39,6 +40,10 @@ English and Persian interfaces, RTL layout, compact popup and expanded workspace
 ### Gradient editor
 
 ![Editable gradient with color and opacity stops](docs/images/gradients.png)
+
+### Screenshots
+
+![Local screenshot preview with manual export controls](docs/images/screenshots.png)
 
 ### CSS workshop
 
@@ -87,6 +92,7 @@ Replace the extracted files, reload the extension and reload inspected pages to 
 - **Inspect:** Frontend tools → Element inspector or Typography → select an element. Copy CSS from the page panel or workspace.
 - **Measure:** Spacing ruler → select two elements. Read gaps and coordinate differences.
 - **Audit/export:** Layout audit, Contrast audit or Design tokens → locate findings or download CSS/JSON.
+- **Screenshot:** Screenshots → Choose target page → verify the displayed title/URL → Capture visible area within 30 seconds → review → Save PNG/JPEG. Temporary tool overlays are removed; page direction and scroll stay unchanged. The confirmation is single-use; choose the page again for another image.
 - **Build CSS:** CSS workshop → convert px/rem, generate a fluid size between two viewport widths, or tune a box shadow; copy the result. Root size is a user-provided assumption, not a change to the target page.
 - **Review accessibility basics:** Scan for missing alternatives, control names and heading jumps. Locate each finding or export JSON. These heuristics need human review; decorative `alt=""` images and labelled controls are accepted.
 - **Compare:** Choose a local reference image, adjust its opacity/position/width and enable dragging if needed. The image is fixed relative to the viewport.
@@ -109,7 +115,7 @@ Configure at `chrome://extensions/shortcuts`, `edge://extensions/shortcuts`, or 
 
 ## Privacy
 
-No accounts, analytics, remote code, CDN fonts or application-server requests. Data stays in the browser profile. Reference images and screenshot pixels are processed locally. The last element inspection/measurement is saved locally to survive closing the popup.
+No accounts, analytics, remote code, CDN fonts or application-server requests. Data stays in the browser profile. Reference images and screenshot pixels are processed locally. The last element inspection/measurement is saved locally to survive closing the popup. Screenshot previews stay in the open extension page; saving is manual. Short-lived authorization metadata lives in trusted session storage, not screenshot history. Read [the security review](SECURITY.md) for controls and limits, including privileged OS automation and the unpatched development-tool advisory.
 
 Permissions: `activeTab`, `scripting`, `storage`, `clipboardWrite`, plus Chromium-only `offscreen`. Release manifests have no persistent all-sites permission or clipboard-read permission. See [PRIVACY.md](PRIVACY.md) ([فارسی](PRIVACY.fa.md)).
 
@@ -135,7 +141,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) for architecture, testing, translation a
 
 ## Validation and limits
 
-- There are 24 unit/compatibility tests and an Edge integration suite covering the color tools, nine frontend tools, CSS workshop, real clipboard, report export, and every page/dialog in English and Persian at 790×600, 1100×800 and 480×800. Scrolling checks catch lower-page overflow and button spacing too. Firefox passes `web-ext` validation; actual Firefox execution has **not** been tested in this environment. Native screen selection and shortcut assignment require manual testing.
+- There are 33 unit/compatibility/security tests and an Edge integration suite covering the color tools, nine frontend tools, CSS workshop, real clipboard, report export, external-request and forged-input rejection, and all eight views/four dialogs in English and Persian at 790×600, 1100×800 and 480×800. Scrolling checks catch lower-page overflow and button spacing too. Firefox passes `web-ext` validation; actual Firefox execution has **not** been tested in this environment. Native screen selection and shortcut assignment require manual testing.
 - The headless harness grants all-sites and clipboard-read only to an isolated **test copy**. Neither grant enters a release. Unmodified third-party `vendor/` code is excluded from heuristic Mozilla scanning.
 - Protected browser/store pages may reject injection; `file://` needs browser-granted file access. Page-color scans cap at 30,000 elements. Frontend scans cap at 10,000 and show up to 1,000 findings. Closed shadow roots and cross-origin frame DOM are inaccessible; frontend audits do not traverse iframes.
 - Typography reports computed CSS, not the actual font file used for each glyph. Contrast is not a complete WCAG audit: images, gradients, opacity/filter/blending, uncertain canvas backgrounds, sibling occlusion and image text need visual review. Intentional overflow may be reported.

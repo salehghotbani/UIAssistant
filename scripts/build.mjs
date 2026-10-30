@@ -15,6 +15,8 @@ async function build(name, manifest = sourceManifest) {
     'THIRD_PARTY_NOTICES.md',
     'PRIVACY.md',
     'PRIVACY.fa.md',
+    'SECURITY.md',
+    'SECURITY.fa.md',
     'popup.html',
     'popup.js',
     'styles.css',

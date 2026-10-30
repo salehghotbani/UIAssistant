@@ -1,6 +1,7 @@
 import { initFrontendTools } from './lib/tools-ui.js';
 import { initButtonIcons } from './lib/icons.js';
 import { initWorkshop } from './lib/workshop-ui.js';
+import { initScreenshots } from './lib/screenshots-ui.js';
 import DOMPurify from './vendor/purify.es.mjs';
 import { api } from './lib/browser.js';
 import {
@@ -137,6 +138,7 @@ function setView(next) {
   $('#view-title').textContent = t(view);
   $('#view-title').insertAdjacentHTML('beforeend', '<span class="title-dot">.</span>');
   $('#main').scrollTop = 0;
+  document.dispatchEvent(new Event('uia:view'));
 }
 $$('[data-view]').forEach((el) => el.addEventListener('click', () => setView(el.dataset.view)));
 $$('[data-go]').forEach((el) => el.addEventListener('click', () => setView(el.dataset.go)));
@@ -1115,6 +1117,16 @@ initFrontendTools({
   },
 });
 initWorkshop({ navigate: setView, copy: safe(copy), getLanguage: () => state.settings.language });
+initScreenshots({
+  navigate: setView,
+  send,
+  download,
+  toast,
+  getLanguage: () => state.settings.language,
+  activate: async () => {
+    if (targetTab) await api.tabs.update(targetTab, { active: true });
+  },
+});
 initButtonIcons();
 setView(view);
 document.documentElement.dataset.ready = 'true';

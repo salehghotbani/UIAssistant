@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
   "name": "UIAssistant",
-  "version": "0.4.0",
-  "description": "Local frontend tools: color picker, CSS workshop, style inspector, spacing ruler and accessibility checks.",
+  "version": "0.5.0",
+  "description": "Local frontend tools: colors, screenshots, CSS workshop, style inspector, spacing ruler and accessibility checks.",
   "minimum_chrome_version": "116",
   "permissions": ["activeTab", "scripting", "storage", "offscreen", "clipboardWrite"],
+  "externally_connectable": { "ids": [], "matches": [] },
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -45,6 +46,6 @@
     }
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'none'"
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; connect-src 'none'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; form-action 'none'"
   }
 }

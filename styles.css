@@ -2034,6 +2034,42 @@ dialog {
   border-radius: 8px;
   overflow: hidden;
 }
+.screenshot-consent {
+  margin-block: 16px;
+  padding: 16px;
+  border: 1px solid #cbb9ed;
+  border-radius: 8px;
+  background: #faf7ff;
+  font-size: 12px;
+}
+#screenshot-target {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  direction: ltr;
+  text-align: start;
+  line-height: 1.8;
+}
+.screenshot-preview {
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-block: 16px;
+}
+.screenshot-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 360px;
+  object-fit: contain;
+}
+#screenshot-meta {
+  direction: ltr;
+}
+.screenshot-note {
+  font-size: 11px;
+  color: #756b82;
+}
 #shadow-tile {
   display: grid;
   place-items: center;

@@ -3,6 +3,7 @@
   if (window.__uiassistant_sampler_v1) return;
   window.__uiassistant_sampler_v1 = true;
   let session = null;
+  let notificationToken = null;
   const send = async (message) => {
     const result = await api.runtime.sendMessage(message);
     if (!result?.ok) throw new Error(result?.error || 'UIAssistant could not complete the action.');
@@ -22,6 +23,7 @@
   }
   function finish() {
     if (!session) return;
+    if (session.token) send({ type: 'END_SAMPLE', token: session.token }).catch(() => {});
     for (const [type, handler] of session.events) window.removeEventListener(type, handler, true);
     session.host.remove();
     session.cursor.remove();
@@ -119,7 +121,7 @@
     s.host.style.visibility = 'hidden';
     await waitFrame();
     try {
-      const result = await send({ type: 'CAPTURE' });
+      const result = await send({ type: 'CAPTURE', token: s.token });
       const image = await loadImage(result.image);
       if (session === s) Object.assign(s, image);
     } finally {
@@ -149,7 +151,8 @@
             }
           : null,
       };
-      const result = await send({ type: 'PICKED', color, location });
+      const result = await send({ type: 'PICKED', color, location, token: s.token });
+      notificationToken = result.openToken;
       finish();
       notify(
         result.copyError ||
@@ -187,8 +190,9 @@
     button.prepend(svg);
     button.style.cssText =
       'display:inline-flex;align-items:center;gap:7px;border:0;border-radius:6px;background:#a78bfa;color:#171420;padding:7px 10px;cursor:pointer;font:inherit;flex-shrink:0';
-    button.onclick = () => {
-      send({ type: 'OPEN_WORKSPACE' }).catch(() => {});
+    button.onclick = (event) => {
+      if (!event.isTrusted) return;
+      send({ type: 'OPEN_WORKSPACE', token: notificationToken }).catch(() => {});
       host.remove();
     };
     box.append(label, button);
@@ -214,6 +218,7 @@
     document.documentElement.append(cursor, host);
     const image = await loadImage(message.image);
     const s = {
+      token: message.token,
       ...image,
       host,
       cursor,
@@ -247,6 +252,7 @@
       window.addEventListener(type, fn, true);
     }
     function move(e) {
+      if (!e.isTrusted) return;
       if (s.busy) return;
       s.x = Math.min(innerWidth - 1, Math.max(0, e.clientX));
       s.y = Math.min(innerHeight - 1, Math.max(0, e.clientY));
@@ -256,6 +262,7 @@
     }
     on('pointermove', move);
     on('pointerdown', (e) => {
+      if (!e.isTrusted) return;
       if (e.button !== 0) return;
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -263,6 +270,7 @@
       s.start = { x: s.x, y: s.y };
     });
     on('pointerup', (e) => {
+      if (!e.isTrusted) return;
       if (e.button !== 0 || !s.start) return;
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -281,6 +289,7 @@
       e.stopImmediatePropagation();
     });
     on('keydown', (e) => {
+      if (!e.isTrusted) return;
       if (
         ![
           'Escape',
@@ -351,6 +360,12 @@
     return {};
   }
   api.runtime.onMessage.addListener((message, sender, respond) => {
+    if (
+      sender.id !== api.runtime.id ||
+      sender.tab ||
+      (sender.url && sender.url !== api.runtime.getURL('background.js'))
+    )
+      return;
     if (!message.type?.startsWith('UIA_')) return;
     if (message.type === 'UIA_HIDE') {
       finish();
@@ -358,6 +373,8 @@
       return;
     }
     const run = async () => {
+      if (message.nonce !== globalThis.__uiaDocumentIdentity)
+        throw Error('The page changed. Start again.');
       if (message.type === 'UIA_START') return start(message);
       if (message.type === 'UIA_RESAMPLE') {
         const last = message.last;
@@ -381,7 +398,13 @@
             }
           : null;
         const value = area(s, s.x, s.y, r);
-        const result = await send({ type: 'PICKED', color: value, location: last });
+        const result = await send({
+          type: 'PICKED',
+          color: value,
+          location: last,
+          token: message.token,
+        });
+        notificationToken = result.openToken;
         notify(
           result.copyError || `${value} · ${message.settings.autoCopy ? 'Copied' : 'Saved'}`,
           message.settings.language === 'fa',

@@ -9,7 +9,8 @@ const require = createRequire(import.meta.url),
   { chromium } = require('playwright');
 const root = new URL('../', import.meta.url),
   artifacts = new URL('artifacts/', root),
-  ext = new URL('artifacts/test-extension/', root);
+  ext = new URL('artifacts/test-extension/', root),
+  peer = new URL('artifacts/security-test-peer/', root);
 await mkdir(artifacts, { recursive: true });
 await mkdir(ext, { recursive: true });
 for (const path of [
@@ -30,6 +31,17 @@ const manifest = JSON.parse(await readFile(new URL('manifest.json', ext), 'utf8'
 manifest.host_permissions = ['<all_urls>'];
 manifest.permissions.push('clipboardRead');
 await writeFile(new URL('manifest.json', ext), JSON.stringify(manifest));
+await mkdir(peer, { recursive: true });
+await writeFile(
+  new URL('manifest.json', peer),
+  JSON.stringify({
+    manifest_version: 3,
+    name: 'UIAssistant isolated security test peer',
+    version: '1.0',
+    background: { service_worker: 'peer.js' },
+  }),
+);
+await writeFile(new URL('peer.js', peer), 'chrome.runtime.onMessage.addListener(() => {});');
 const server = createServer((req, res) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.end(
@@ -46,8 +58,8 @@ const context = await chromium.launchPersistentContext(
       process.env.BROWSER_PATH ||
       'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
     args: [
-      `--disable-extensions-except=${fileURLToPath(ext)}`,
-      `--load-extension=${fileURLToPath(ext)}`,
+      `--disable-extensions-except=${fileURLToPath(ext)},${fileURLToPath(peer)}`,
+      `--load-extension=${fileURLToPath(ext)},${fileURLToPath(peer)}`,
     ],
     viewport: { width: 1100, height: 800 },
   },
@@ -57,10 +69,21 @@ context.on('weberror', (error) => failures.push(error.error().message));
 let diagnosticUI;
 try {
   const worker =
-    context.serviceWorkers()[0] ||
-    (await context.waitForEvent('serviceworker', { timeout: 20000 }));
+    context.serviceWorkers().find((w) => w.url().endsWith('/background.js')) ||
+    (await context.waitForEvent('serviceworker', {
+      predicate: (w) => w.url().endsWith('/background.js'),
+      timeout: 20000,
+    }));
   const extensionId = new URL(worker.url()).host;
   await worker.evaluate(() => chrome.storage.local.clear());
+  await worker.evaluate(() => {
+    globalThis.__captureCount = 0;
+    const original = chrome.tabs.captureVisibleTab.bind(chrome.tabs);
+    chrome.tabs.captureVisibleTab = (...args) => {
+      globalThis.__captureCount++;
+      return original(...args);
+    };
+  });
   const page = await context.newPage();
   await page.goto('http://127.0.0.1:4174');
   await page.bringToFront();
@@ -72,6 +95,12 @@ try {
   diagnosticUI = ui;
   await ui.goto(`chrome-extension://${extensionId}/popup.html?tab=${tabId}`);
   await ui.waitForFunction(() => document.documentElement.dataset.ready === 'true');
+  async function toggleLanguage() {
+    const previous = await ui.locator('html').getAttribute('lang');
+    await ui.locator('#language-btn').click();
+    await ui.waitForFunction((previous) => document.documentElement.lang !== previous, previous);
+  }
+
   await ui.locator('#hex').fill('#E75480');
   await ui.locator('#hex').press('Tab');
   await ui.waitForFunction(
@@ -319,6 +348,169 @@ try {
   console.log(
     'PASS local reference image, adjustable overlay, RTL preview and exact page restoration',
   );
+  const pageMessage = (message) =>
+    worker.evaluate(
+      async ({ tabId, message }) =>
+        (
+          await chrome.scripting.executeScript({
+            target: { tabId, frameIds: [0] },
+            func: async (message) => {
+              try {
+                return await chrome.runtime.sendMessage(message);
+              } catch (error) {
+                return { blocked: true, error: error.message };
+              }
+            },
+            args: [message],
+          })
+        )[0].result,
+      { tabId, message },
+    );
+  const countCaptures = () => worker.evaluate(() => globalThis.__captureCount);
+  const beforeAttack = await countCaptures();
+  for (const message of [
+    { type: 'CAPTURE' },
+    { type: 'CAPTURE', token: 'forged' },
+    { type: 'SCREENSHOT_PREPARE', tabId },
+    { type: 'START_PICK', tabId },
+    { type: 'TOOL_COPY', text: 'unauthorized clipboard' },
+  ]) {
+    const reply = await pageMessage(message);
+    assert.ok(reply.ok === false || reply.blocked);
+    assert.ok(!reply.image);
+  }
+  assert.equal(await countCaptures(), beforeAttack);
+  const clipboardBefore = await ui.evaluate(() => navigator.clipboard.readText());
+  const offscreenReply = await pageMessage({
+    target: 'offscreen',
+    text: 'forged offscreen clipboard request',
+  });
+  assert.ok(offscreenReply?.ok !== true);
+  assert.equal(await ui.evaluate(() => navigator.clipboard.readText()), clipboardBefore);
+  const deniedStorage = await worker.evaluate(
+    async (tabId) =>
+      (
+        await chrome.scripting.executeScript({
+          target: { tabId },
+          func: async () => {
+            try {
+              await chrome.storage.local.get(null);
+              return false;
+            } catch {
+              return true;
+            }
+          },
+        })
+      )[0].result,
+    tabId,
+  );
+  assert.equal(deniedStorage, true);
+  const peerWorker =
+    context.serviceWorkers().find((w) => w.url().endsWith('/peer.js')) ||
+    (await context.waitForEvent('serviceworker', {
+      predicate: (w) => w.url().endsWith('/peer.js'),
+    }));
+  const peerReply = await peerWorker.evaluate(async (id) => {
+    try {
+      return await chrome.runtime.sendMessage(id, { type: 'SCREENSHOT_PREPARE', tabId: 1 });
+    } catch {
+      return { blocked: true };
+    }
+  }, extensionId);
+  assert.ok(peerReply?.blocked || peerReply?.ok === false);
+  assert.equal(await countCaptures(), beforeAttack);
+  await ui.locator('[data-view="picker"]').click();
+  await ui.locator('#pick-page').click();
+  await page.waitForTimeout(650);
+  const sampleCount = await countCaptures();
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: 180, clientY: 210 }),
+    );
+    window.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, button: 0, clientX: 180, clientY: 210 }),
+    );
+    window.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: ' ' }));
+  });
+  await page.waitForTimeout(650);
+  assert.equal(await countCaptures(), sampleCount);
+  await page.keyboard.press('Escape');
+  const expiredReply = await pageMessage({ type: 'CAPTURE' });
+  assert.equal(expiredReply.ok, false);
+  console.log(
+    'PASS cross-extension denial, forged/page capture denial, trusted storage and synthetic-event resistance',
+  );
+  await ui.bringToFront();
+  await ui.locator('[data-view="screenshots"]').click();
+  await ui.locator('#screenshot-prepare').evaluate((el) => el.click());
+  assert.ok(await ui.locator('.screenshot-consent').isHidden());
+  await ui.locator('#screenshot-prepare').click();
+  await ui.locator('.screenshot-consent').waitFor({ state: 'visible' });
+  await ui.locator('#screenshot-cancel').click();
+  assert.ok(await ui.locator('.screenshot-consent').isHidden());
+  assert.equal(await countCaptures(), sampleCount);
+  await ui.locator('#screenshot-prepare').click();
+  await ui.locator('.screenshot-consent').waitFor({ state: 'visible' });
+  assert.ok((await ui.locator('#screenshot-target').textContent()).includes('127.0.0.1:4174'));
+  const ticket = await worker.evaluate(
+    async () =>
+      Object.entries(
+        (await chrome.storage.session.get('uiaSecurityGrants')).uiaSecurityGrants,
+      ).find(([, g]) => g.kind === 'screenshot')[0],
+  );
+  const beforeScreenshot = await countCaptures();
+  await ui.locator('#screenshot-capture').click();
+  await ui.locator('#screenshot-image').waitFor({ state: 'visible' });
+  assert.equal(await countCaptures(), beforeScreenshot + 1);
+  assert.deepEqual(
+    await ui.locator('#screenshot-image').evaluate((el) => [el.naturalWidth, el.naturalHeight]),
+    [1100, 800],
+  );
+  const replay = await ui.evaluate(
+    async ({ ticket, tabId }) =>
+      chrome.runtime.sendMessage({ type: 'SCREENSHOT_CAPTURE', ticket, tabId }),
+    { ticket, tabId },
+  );
+  assert.equal(replay.ok, false);
+  assert.equal(await countCaptures(), beforeScreenshot + 1);
+  await ui.bringToFront();
+  const pngDownload = ui.waitForEvent('download');
+  await ui.locator('#screenshot-save-png').click();
+  const pngBytes = await readFile(await (await pngDownload).path());
+  assert.deepEqual([...pngBytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  const jpgDownload = ui.waitForEvent('download');
+  await ui.locator('#screenshot-save-jpeg').click();
+  const jpgBytes = await readFile(await (await jpgDownload).path());
+  assert.equal(jpgBytes.readUInt16BE(0), 0xffd8);
+  assert.equal(
+    await worker.evaluate(async () =>
+      JSON.stringify(await chrome.storage.local.get(null)).includes('data:image/png'),
+    ),
+    false,
+  );
+  await ui.locator('#screenshot-clear').click();
+  assert.ok(await ui.locator('#screenshot-image').isHidden());
+  await ui.locator('#screenshot-prepare').click();
+  await ui.locator('.screenshot-consent').waitFor({ state: 'visible' });
+  await page.reload();
+  await ui.locator('#screenshot-capture').click();
+  await ui.waitForFunction(
+    () =>
+      document.querySelector('#screenshot-status').textContent.includes('expired') ||
+      document.querySelector('#screenshot-status').textContent.includes('navigat'),
+  );
+  assert.equal(await countCaptures(), beforeScreenshot + 1);
+  assert.ok(await ui.locator('#screenshot-image').isHidden());
+  await ui.bringToFront();
+  await ui.locator('#screenshot-prepare').click();
+  await ui.locator('.screenshot-consent').waitFor({ state: 'visible' });
+  await ui.locator('#screenshot-capture').click();
+  await ui.locator('#screenshot-image').waitFor({ state: 'visible' });
+  await ui.bringToFront();
+  console.log(
+    'PASS confirmed viewport screenshot, PNG/JPEG bytes, no screenshot storage, replay and same-URL navigation denial',
+  );
   await ui.locator('#toast').waitFor({ state: 'hidden' });
   await ui.screenshot({
     path: fileURLToPath(new URL('artifacts/frontend-tools.png', root)),
@@ -329,14 +521,14 @@ try {
   await ui.bringToFront();
   await ui.locator('#hex').fill('#6C5CE7');
   await ui.locator('#hex').press('Tab');
-  await ui.locator('#language-btn').click();
+  await toggleLanguage();
   assert.equal(await ui.locator('html').getAttribute('dir'), 'rtl');
   await ui.locator('#toast').waitFor({ state: 'hidden' });
   await ui.screenshot({
     path: fileURLToPath(new URL('artifacts/workspace-fa.png', root)),
     fullPage: true,
   });
-  await ui.locator('#language-btn').click();
+  await toggleLanguage();
   await ui.locator('[data-view="workshop"]').click();
   assert.equal(await ui.locator('#unit-result').textContent(), '1.5rem');
   await ui.locator('#unit-from').selectOption('rem');
@@ -365,12 +557,12 @@ try {
   await ui.locator('#shadow-inset').check();
   await ui.locator('#shadow-x').fill('-4');
   assert.match(await ui.locator('#shadow-result').textContent(), /inset -4px/);
-  await ui.locator('#language-btn').click();
+  await toggleLanguage();
   await ui.waitForFunction(() =>
     document.querySelector('#view-title').textContent.includes('کارگاه'),
   );
   assert.ok(await ui.locator('#view-workshop').isVisible());
-  await ui.locator('#language-btn').click();
+  await toggleLanguage();
   assert.ok(await ui.locator('#view-workshop').isVisible());
   console.log(
     'PASS CSS workshop calculations, preview, real clipboard, validation and navigation across language changes',
@@ -384,7 +576,16 @@ try {
   await ui.locator('[data-view="gradients"]').click();
   await ui.locator('[data-preset="0"]').click();
   await ui.screenshot({ path: fileURLToPath(new URL('artifacts/gradients.png', root)) });
-  const views = ['picker', 'gradients', 'analyzer', 'palettes', 'history', 'frontend', 'workshop'];
+  const views = [
+    'picker',
+    'gradients',
+    'analyzer',
+    'palettes',
+    'history',
+    'frontend',
+    'workshop',
+    'screenshots',
+  ];
   async function checkLayout(label) {
     const problems = await ui.evaluate(() => {
       const main = document.querySelector('main');
@@ -436,8 +637,7 @@ try {
     );
     await ui.setViewportSize({ width, height });
     for (const language of ['en', 'fa']) {
-      if ((await ui.locator('html').getAttribute('lang')) !== language)
-        await ui.locator('#language-btn').click();
+      if ((await ui.locator('html').getAttribute('lang')) !== language) await toggleLanguage();
       for (const name of views) {
         await ui.locator(`[data-view="${name}"]`).click();
         await ui.waitForTimeout(60);

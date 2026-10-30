@@ -42,6 +42,8 @@ Injected `pageAnalyzer` and `pageTools` functions are serialized by the browser.
 
 ## Implementation expectations
 
+Read [SECURITY.md](SECURITY.md) before changing capture, messaging or storage. Keep capabilities scoped/expiring, external connections disabled, screenshot saves manual, and security regression tests intact. The documented unpatched development-tool advisory must not be hidden by downgrading or disabling audit checks.
+
 - Preserve Firefox and Chromium behavior through the `api` adapter. Do not assume Firefox has service workers/offscreen documents.
 - Discuss new permissions, networking or stored data explicitly. Keep releases free of test-only permissions and remote code.
 - Restore page attributes/styles and priorities exactly. Remove listeners and overlays when finished or cancelled.

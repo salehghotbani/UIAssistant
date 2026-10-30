@@ -4,7 +4,11 @@
 
 UIAssistant has no account system, analytics, advertising, remote code, or telemetry. It makes no network requests to an application server.
 
-Color selections, up to 200 unique history entries, settings, custom palettes, and gradient presets are stored using the browser’s `storage.local` on the current browser profile. They are not synchronized through this extension. A last-sample record contains the page URL, tab ID, viewport, scroll position, and normalized sample coordinates so the extension can safely resample the same location. Screenshots are processed in memory and are not saved to history or transmitted.
+Color selections, up to 200 unique history entries, settings, custom palettes, and gradient presets are stored using the browser’s `storage.local` on the current browser profile. They are not synchronized through this extension. A last-sample record contains the page URL, tab ID, viewport, scroll position, and normalized sample coordinates so the extension can safely resample the same location. Screenshots are processed in memory, not uploaded or saved to screenshot history.
+
+The Screenshots view captures only after target preparation and a separate confirmation. The preview stays in the open extension page; PNG/JPEG files are written only when you choose Save, using the browser's normal download behavior. Delete preview or close the page to release the preview. Downloaded files remain subject to the operating system's file permissions.
+
+Short-lived capture/tool authorization records contain a random capability, tab/window/document identity, page URL and expiry in `storage.session`; this is not screenshot storage. Navigation, cancellation and completion invalidate the relevant grants. Expired metadata is pruned on subsequent authorization operations, and session storage is cleared when the extension/browser session ends. Trusted-only storage access is used where supported. See [the security review](SECURITY.md) for the threat model, tests and remaining development-tool advisory.
 
 When you explicitly analyze a page, the extension reads computed DOM styles and keeps element references in that page's isolated script context to highlight matching elements. It reads the page title and URL for the results display. Analysis is not uploaded or automatically run in the background.
 

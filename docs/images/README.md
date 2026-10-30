@@ -10,6 +10,8 @@ Actual UIAssistant captures from `tests/browser.mjs`, using an isolated headless
 | `workspace-fa.png`   | Persian expanded workspace                             |
 | `css-workshop.png`   | English CSS workshop: unit converter and fluid sizing  |
 
+`screenshots.png` shows the visible-area screenshot preview and local export controls.
+
 Regenerate with `npm run test:browser`, inspect `artifacts/`, then copy intended captures here. Screenshots use the project's [MIT license](../../LICENSE).
 
 این تصاویر از رابط واقعی افزونه در Edge مجزا و با صفحهٔ آزمایشی محلی گرفته شده‌اند؛ ماکاپ نیستند و دادهٔ شخصی ندارند. برای به‌روزرسانی، تست مرورگر را اجرا و تصاویر مناسب `artifacts/` را پس از بررسی به این پوشه کپی کنید. مجوز تصاویر MIT است.
