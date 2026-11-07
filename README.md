@@ -6,7 +6,7 @@
 
 **English** · [فارسی](README.fa.md)
 
-[Project website](https://salehghotbani.github.io/UIAssistant/) · [Latest release](https://github.com/salehghotbani/UIAssistant/releases/latest) · [Contributing](CONTRIBUTING.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [MIT License](LICENSE)
+[Project website](https://uiassistant.ghotbani.ir/) · [Latest release](https://github.com/salehghotbani/UIAssistant/releases/latest) · [Contributing](CONTRIBUTING.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [MIT License](LICENSE)
 
 ![Color picker with spectrum, RGB/HSV controls and history](docs/images/color-picker.png)
 
