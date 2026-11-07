@@ -6,7 +6,7 @@
 
 [English](README.md) · **فارسی**
 
-[آخرین انتشار](https://github.com/salehghotbani/UIAssistant/releases/latest) · [مشارکت](CONTRIBUTING.fa.md) · [حریم خصوصی](PRIVACY.fa.md) · [امنیت](SECURITY.fa.md) · [مجوز MIT](LICENSE.fa.md)
+[وب‌سایت پروژه](https://salehghotbani.github.io/UIAssistant/fa/) · [آخرین انتشار](https://github.com/salehghotbani/UIAssistant/releases/latest) · [مشارکت](CONTRIBUTING.fa.md) · [حریم خصوصی](PRIVACY.fa.md) · [امنیت](SECURITY.fa.md) · [مجوز MIT](LICENSE.fa.md)
 
 ![فضای کار فارسی با چیدمان راست‌به‌چپ](docs/images/workspace-fa.png)
 

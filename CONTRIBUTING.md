@@ -93,6 +93,8 @@ Do not force-push shared branches or rewrite unrelated history. The maintainer r
 1. For a version change, synchronize `manifest.json`, `package.json`, `package-lock.json` and the displayed version. Documentation-only changes may retain the current version.
 2. Run applicable checks, update English/Persian docs and bilingual release notes.
 3. Build browser-specific ZIPs and the source/publication kit; verify manifest version, ZIP integrity, licenses and production permissions.
-4. Commit/push source to `main`; create a tag at the intended commit, such as `v0.3.0`. Do not move an already-published tag without discussion.
+4. Merge the release changes into protected `main` through a pull request, then tag the intended commit, such as `v0.3.0`. Do not move an already-published tag without discussion.
 5. Publish the browser, source and publication-kit ZIPs plus `SHA256SUMS.txt` in GitHub Releases. Document unsigned/developer installation and Firefox testing status.
 6. Verify public links and asset downloads. Store submission and Mozilla signing are separate steps; a GitHub archive is not store-signed.
+
+The project website is served by GitHub Pages from `main:/docs`. For site changes, preview `docs/` locally, check the English and Persian pages, and update both versions in the same pull request. Download links use the latest release, so keep the browser ZIP filenames stable.
